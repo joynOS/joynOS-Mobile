@@ -5,8 +5,14 @@ import QuizHeader from '../components/QuizHeader';
 import Button from '../components/Button';
 import { QUIZ_QUESTIONS } from '../utils';
 
+import { RootStackParamList } from '../navigation/types';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+type InterestSelectorNavigationProp = NativeStackNavigationProp<RootStackParamList, 'InterestSelector'>;
+
 export default function PersonalityQuiz() {
-    const navigation = useNavigation();
+    // const navigation = useNavigation();
+    const navigation = useNavigation<InterestSelectorNavigationProp>();
     const [currentQuestion, setCurrentQuestion] = useState(0);
     const [answers, setAnswers] = useState<Record<number, string>>({});
 
@@ -21,7 +27,7 @@ export default function PersonalityQuiz() {
         if (currentQuestion < QUIZ_QUESTIONS.length - 1) {
             setCurrentQuestion(prev => prev + 1);
         } else {
-            navigation.navigate('InterestSelector' as never);
+            navigation.navigate('InterestSelector');
         }
     };
 

@@ -1,14 +1,33 @@
 import React, { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import { View, Text, Image, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+
+import { 
+    View, 
+    Text, 
+    Image, 
+    StyleSheet, 
+    ScrollView, 
+    KeyboardAvoidingView, 
+    Platform, 
+    SafeAreaView, 
+    StatusBar 
+} from 'react-native';
+
 import Button from '../components/Button';
 import PhoneAuth from '../components/PhoneAuth';
 import LoadingSpinner from '../components/LoadSpinner';
 import { useAssets } from 'expo-asset';
 
+import { RootStackParamList } from '../navigation/types';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+type PersonalityQuizNavigationProp = NativeStackNavigationProp<RootStackParamList, 'PersonalityQuiz'>;
+
+
 
 export default function Welcome() {
-    const navigation = useNavigation();
+    // const navigation = useNavigation();
+    const navigation = useNavigation<PersonalityQuizNavigationProp>();
     const [isLoading, setIsLoading] = useState(false);
     const [showPhoneAuth, setShowPhoneAuth] = useState(false);
     const [phone, setPhone] = useState('');
@@ -18,7 +37,7 @@ export default function Welcome() {
         try {
             setIsLoading(true);
             await new Promise((res) => setTimeout(res, 1500));
-            navigation.navigate('PersonalityQuiz' as never);
+            navigation.navigate('PersonalityQuiz');
         } catch (error) {
             console.error('Auth error:', error);
         } finally {
@@ -27,10 +46,8 @@ export default function Welcome() {
     };
 
     return (
-        <KeyboardAvoidingView
-            style={styles.flex}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
+        <SafeAreaView style={styles.safeArea}>
+            <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
             <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
                 {/* Header com logo */}
                 <View style={styles.header}>
@@ -103,11 +120,11 @@ export default function Welcome() {
                     <Text style={styles.linkText}>Privacy Policy</Text>
                 </Text>
             </ScrollView>
-        </KeyboardAvoidingView>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 }
 
-// Ícone simples para Google (baseado no SVG que você usou no React web)
 const GoogleIcon = () => (
     <View style={{ marginRight: 8 }}>
         <Image
@@ -117,7 +134,6 @@ const GoogleIcon = () => (
     </View>
 );
 
-// Ícone simples para Facebook (baseado no SVG que você usou no React web)
 const FacebookIcon = () => (
     <View style={{ marginRight: 8 }}>
         <Image
@@ -129,6 +145,12 @@ const FacebookIcon = () => (
 );
 
 const styles = StyleSheet.create({
+
+    safeArea: {
+        flex: 1,
+        backgroundColor: '#000',
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    },
     flex: {
         flex: 1,
         backgroundColor: '#000',

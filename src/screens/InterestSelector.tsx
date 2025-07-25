@@ -7,6 +7,10 @@ import LoadingSpinner from '../components/LoadSpinner';
 import InterestItem from '../components/InterestItem';
 import DistanceSlider from '../components/DistanceSlider';
 import { INTERESTS } from '../utils';
+import { RootStackParamList } from '../navigation/types';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+// type HomeNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
 
 export default function InterestSelector() {
