@@ -2,231 +2,230 @@ import React, { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { View, Text, Image, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import Button from '../components/Button';
-import Input from '../components/Input';
 import PhoneAuth from '../components/PhoneAuth';
 import LoadingSpinner from '../components/LoadSpinner';
 import { useAssets } from 'expo-asset';
 
 
 export default function Welcome() {
-  const navigation = useNavigation();
-  const [isLoading, setIsLoading] = useState(false);
-  const [showPhoneAuth, setShowPhoneAuth] = useState(false);
-  const [phone, setPhone] = useState('');
-  const [assets] = useAssets([require('../../assets/JoynOS_Logo.png')]);
+    const navigation = useNavigation();
+    const [isLoading, setIsLoading] = useState(false);
+    const [showPhoneAuth, setShowPhoneAuth] = useState(false);
+    const [phone, setPhone] = useState('');
+    const [assets] = useAssets([require('../../assets/JoynOS_Logo.png')]);
 
-  const handleSocialAuth = async (provider: string) => {
-    try {
-      setIsLoading(true);
-      await new Promise((res) => setTimeout(res, 1500));
-      navigation.navigate('Quiz' as never);
-    } catch (error) {
-      console.error('Auth error:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    const handleSocialAuth = async (provider: string) => {
+        try {
+            setIsLoading(true);
+            await new Promise((res) => setTimeout(res, 1500));
+            navigation.navigate('PersonalityQuiz' as never);
+        } catch (error) {
+            console.error('Auth error:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-  return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        {/* Header com logo */}
-        <View style={styles.header}>
-          <View style={styles.logoWrapper}>
-            <View style={styles.logoGlow} />
-            {assets ? (
-              <Image source={{ uri: assets[0].localUri || assets[0].uri }} style={styles.logo} />
-            ) : (
-              <LoadingSpinner size="sm" />
-            )}
-          </View>
-          <Text style={styles.title}>Welcome to Joyn</Text>
-          <Text style={styles.subtitle}>
-            Discover events that match your vibe.{'\n'}
-            Meet people who share your energy.
-          </Text>
-        </View>
+    return (
+        <KeyboardAvoidingView
+            style={styles.flex}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+            <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+                {/* Header com logo */}
+                <View style={styles.header}>
+                    <View style={styles.logoWrapper}>
+                        <View style={styles.logoGlow} />
+                        {assets ? (
+                            <Image source={{ uri: assets[0].localUri || assets[0].uri }} style={styles.logo} />
+                        ) : (
+                            <LoadingSpinner size="sm" />
+                        )}
+                    </View>
+                    <Text style={styles.title}>Welcome to Joyn</Text>
+                    <Text style={styles.subtitle}>
+                        Discover events that match your vibe.{'\n'}
+                        Meet people who share your energy.
+                    </Text>
+                </View>
 
-        {/* Conteúdo principal */}
-        <View style={styles.card}>
-          {!showPhoneAuth ? (
-            <>
-              <Button
-                onPress={() => handleSocialAuth('google')}
-                loading={isLoading}
-                style={[styles.socialButton, styles.googleButton]}
-                title={isLoading ? '' : 'Continue with Google'}
-              >
-                {isLoading ? (
-                  <LoadingSpinner size="sm" />
-                ) : (
-                  <GoogleIcon />
-                )}
-              </Button>
+                {/* Conteúdo principal */}
+                <View style={styles.card}>
+                    {!showPhoneAuth ? (
+                        <>
+                            <Button
+                                onPress={() => handleSocialAuth('google')}
+                                loading={isLoading}
+                                style={[styles.socialButton, styles.googleButton]}
+                                title={isLoading ? '' : 'Continue with Google'}
+                            >
+                                {isLoading ? (
+                                    <LoadingSpinner size="sm" />
+                                ) : (
+                                    <GoogleIcon />
+                                )}
+                            </Button>
 
-              <Button
-                onPress={() => handleSocialAuth('facebook')}
-                loading={isLoading}
-                style={[styles.socialButton, styles.facebookButton]}
-                title={isLoading ? '' : 'Continue with Facebook'}
-              >
-                {isLoading ? (
-                  <LoadingSpinner size="sm" />
-                ) : (
-                  <FacebookIcon />
-                )}
-              </Button>
+                            <Button
+                                onPress={() => handleSocialAuth('facebook')}
+                                loading={isLoading}
+                                style={[styles.socialButton, styles.facebookButton]}
+                                title={isLoading ? '' : 'Continue with Facebook'}
+                            >
+                                {isLoading ? (
+                                    <LoadingSpinner size="sm" />
+                                ) : (
+                                    <FacebookIcon />
+                                )}
+                            </Button>
 
-              <Text style={styles.orText}>or</Text>
+                            <Text style={styles.orText}>or</Text>
 
-              <Button
-                onPress={() => setShowPhoneAuth(true)}
-                style={styles.phoneButton}
-                title="Continue with Phone"
-              />
-            </>
-          ) : (
-            <PhoneAuth
-              phone={phone}
-              setPhone={setPhone}
-              onSubmit={() => navigation.navigate('Quiz' as never)}
-              onBack={() => setShowPhoneAuth(false)}
-            />
-          )}
-        </View>
+                            <Button
+                                onPress={() => setShowPhoneAuth(true)}
+                                style={styles.phoneButton}
+                                title="Continue with Phone"
+                            />
+                        </>
+                    ) : (
+                        <PhoneAuth
+                            phone={phone}
+                            setPhone={setPhone}
+                            onSubmit={() => navigation.navigate('PersonalityQuiz' as never)}
+                            onBack={() => setShowPhoneAuth(false)}
+                        />
+                    )}
+                </View>
 
-        <Text style={styles.footerText}>
-          By continuing, you agree to our{' '}
-          <Text style={styles.linkText}>Terms</Text> and{' '}
-          <Text style={styles.linkText}>Privacy Policy</Text>
-        </Text>
-      </ScrollView>
-    </KeyboardAvoidingView>
-  );
+                <Text style={styles.footerText}>
+                    By continuing, you agree to our{' '}
+                    <Text style={styles.linkText}>Terms</Text> and{' '}
+                    <Text style={styles.linkText}>Privacy Policy</Text>
+                </Text>
+            </ScrollView>
+        </KeyboardAvoidingView>
+    );
 }
 
 // Ícone simples para Google (baseado no SVG que você usou no React web)
 const GoogleIcon = () => (
-  <View style={{ marginRight: 8 }}>
-    <Image
-      source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg' }}
-      style={{ width: 20, height: 20 }}
-    />
-  </View>
+    <View style={{ marginRight: 8 }}>
+        <Image
+            source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg' }}
+            style={{ width: 20, height: 20 }}
+        />
+    </View>
 );
 
 // Ícone simples para Facebook (baseado no SVG que você usou no React web)
 const FacebookIcon = () => (
-  <View style={{ marginRight: 8 }}>
-    <Image
-      source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_(2019).png' }}
-      style={{ width: 20, height: 20, tintColor: 'white' }}
-      resizeMode="contain"
-    />
-  </View>
+    <View style={{ marginRight: 8 }}>
+        <Image
+            source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_(2019).png' }}
+            style={{ width: 20, height: 20, tintColor: 'white' }}
+            resizeMode="contain"
+        />
+    </View>
 );
 
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
-  container: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingVertical: 40,
-    justifyContent: 'space-between',
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  logoWrapper: {
-    position: 'relative',
-    marginBottom: 20,
-  },
-  logoGlow: {
-    position: 'absolute',
-    top: -20,
-    left: -20,
-    right: -20,
-    bottom: -20,
-    backgroundColor: 'rgba(30, 194, 139, 0.3)',
-    borderRadius: 20,
-    zIndex: -1,
-    shadowColor: '#1EC28B',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 30,
-  },
-  logo: {
-    width: 64,
-    height: 64,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-  },
-  title: {
-    fontSize: 32,
-    color: '#fff',
-    fontWeight: 'bold',
-    marginBottom: 6,
-  },
-  subtitle: {
-    color: '#ccc',
-    fontSize: 16,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  card: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 24,
-    padding: 24,
-    shadowColor: '#1EC28B',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.15,
-    shadowRadius: 30,
-    elevation: 10,
-  },
-  socialButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-    height: 56,
-  },
-  googleButton: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderColor: 'rgba(255,255,255,0.2)',
-    borderWidth: 1,
-  },
-  facebookButton: {
-    backgroundColor: 'rgba(59, 89, 152, 0.8)',
-    borderColor: 'rgba(59, 89, 152, 1)',
-    borderWidth: 1,
-  },
-  phoneButton: {
-    backgroundColor: 'transparent',
-    borderColor: 'rgba(255,255,255,0.3)',
-    borderWidth: 1,
-  },
-  orText: {
-    color: '#999',
-    textAlign: 'center',
-    marginVertical: 12,
-    fontSize: 14,
-  },
-  footerText: {
-    color: 'rgba(255,255,255,0.6)',
-    textAlign: 'center',
-    fontSize: 12,
-    marginTop: 40,
-  },
-  linkText: {
-    textDecorationLine: 'underline',
-    color: 'rgba(255,255,255,0.8)',
-  },
+    flex: {
+        flex: 1,
+        backgroundColor: '#000',
+    },
+    container: {
+        flexGrow: 1,
+        paddingHorizontal: 24,
+        paddingVertical: 40,
+        justifyContent: 'space-between',
+    },
+    header: {
+        alignItems: 'center',
+        marginBottom: 32,
+    },
+    logoWrapper: {
+        position: 'relative',
+        marginBottom: 20,
+    },
+    logoGlow: {
+        position: 'absolute',
+        top: -20,
+        left: -20,
+        right: -20,
+        bottom: -20,
+        backgroundColor: 'rgba(30, 194, 139, 0.3)',
+        borderRadius: 20,
+        zIndex: -1,
+        shadowColor: '#1EC28B',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.6,
+        shadowRadius: 30,
+    },
+    logo: {
+        width: 64,
+        height: 64,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
+    },
+    title: {
+        fontSize: 32,
+        color: '#fff',
+        fontWeight: 'bold',
+        marginBottom: 6,
+    },
+    subtitle: {
+        color: '#ccc',
+        fontSize: 16,
+        textAlign: 'center',
+        lineHeight: 22,
+    },
+    card: {
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderRadius: 24,
+        padding: 24,
+        shadowColor: '#1EC28B',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.15,
+        shadowRadius: 30,
+        elevation: 10,
+    },
+    socialButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 16,
+        height: 56,
+    },
+    googleButton: {
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        borderColor: 'rgba(255,255,255,0.2)',
+        borderWidth: 1,
+    },
+    facebookButton: {
+        backgroundColor: 'rgba(59, 89, 152, 0.8)',
+        borderColor: 'rgba(59, 89, 152, 1)',
+        borderWidth: 1,
+    },
+    phoneButton: {
+        backgroundColor: 'transparent',
+        borderColor: 'rgba(255,255,255,0.3)',
+        borderWidth: 1,
+    },
+    orText: {
+        color: '#999',
+        textAlign: 'center',
+        marginVertical: 12,
+        fontSize: 14,
+    },
+    footerText: {
+        color: 'rgba(255,255,255,0.6)',
+        textAlign: 'center',
+        fontSize: 12,
+        marginTop: 40,
+    },
+    linkText: {
+        textDecorationLine: 'underline',
+        color: 'rgba(255,255,255,0.8)',
+    },
 });
