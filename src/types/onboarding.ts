@@ -1,5 +1,5 @@
 export interface OnboardingQuizAnswer {
-  questionId: number;
-  answer: string;
-  score: number;
+    questionId: number;
+    answer: string;
+    score: number;
 }
