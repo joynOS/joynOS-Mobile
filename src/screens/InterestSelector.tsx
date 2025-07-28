@@ -10,11 +10,12 @@ import { INTERESTS } from '../utils';
 import { RootStackParamList } from '../navigation/types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-// type HomeNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
+type FeedNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Feed'>;
 
 
 export default function InterestSelector() {
-    const navigation = useNavigation();
+    //const navigation = useNavigation();
+    const navigation = useNavigation<FeedNavigationProp>();
     const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
     const [radius, setRadius] = useState(10);
     const [isLoading, setIsLoading] = useState(false);
@@ -31,10 +32,9 @@ export default function InterestSelector() {
         if (selectedInterests.length < 3) return;
         setIsLoading(true);
 
-        // simula uma chamada de API
         setTimeout(() => {
             setIsLoading(false);
-            //navigation.navigate('Home'); // Ou sua próxima rota
+            navigation.navigate('Feed'); 
         }, 1500);
     };
 

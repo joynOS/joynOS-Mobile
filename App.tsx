@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Welcome from './src/screens/Welcome';
 import PersonalityQuiz from './src/screens/PersonalityQuiz';
 import InterestSelector from './src/screens/InterestSelector'; 
+import Feed from './src/screens/Feed';
 
 const Stack = createNativeStackNavigator();
 
@@ -15,6 +16,7 @@ export default function App() {
         <Stack.Screen name="Welcome" component={Welcome} />
         <Stack.Screen name="PersonalityQuiz" component={PersonalityQuiz} />
         <Stack.Screen name="InterestSelector" component={InterestSelector} />
+        <Stack.Screen name="Feed" component={Feed} />
       </Stack.Navigator>
     </NavigationContainer>
   );
