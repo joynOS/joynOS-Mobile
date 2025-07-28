@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "951278295856",
+    "project_id": "joyn-os",
+    "storage_bucket": "joyn-os.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:951278295856:android:4047718d38177e2bb4c6f5",
+        "android_client_info": {
+          "package_name": "com.egoeimi.joynos"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDWAd6ItM4kgTHBOaPQbkmm0ujir42IBuM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
