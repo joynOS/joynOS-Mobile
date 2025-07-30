@@ -7,7 +7,8 @@ import LoadingSpinner from '../components/LoadSpinner';
 import LiveIntentCapture from '../components/LiveIntentCapture';
 import Spinner from '../components/Spinner';
 import { Filter, Plus, Search, User } from 'lucide-react-native'; 
-import LinearGradient from 'react-native-linear-gradient';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useGetDiscoverFeedQuery } from '../shared/eventSlice';
 
 type IntentData = {
     id?: string;
@@ -21,8 +22,7 @@ export default function Feed() {
     const navigation = useNavigation();
     const [activeFilter, setActiveFilter] = useState('feed');
     const [showIntentCapture, setShowIntentCapture] = useState(false);
-    //const [currentIntent, setCurrentIntent] = useState(null);
-    const [currentIntent, setCurrentIntent] = useState<IntentData | null>(null);
+    const [currentIntent, setCurrentIntent] = useState(null);
 
     const { data: events, isLoading } = useGetDiscoverFeedQuery({});
 
@@ -107,7 +107,7 @@ export default function Feed() {
                 <View style={styles.intentCapture}>
                     <LiveIntentCapture
                         onIntentUpdate={(intent) => {
-                            // setCurrentIntent(intent);
+                            //setCurrentIntent(intent);
                             console.log('Intent updated:', intent);
                         }}
                     />
