@@ -9,6 +9,10 @@ import Spinner from '../components/Spinner';
 import { Filter, Plus, Search, User } from 'lucide-react-native'; 
 import { LinearGradient } from 'expo-linear-gradient';
 import { useGetDiscoverFeedQuery } from '../shared/eventSlice';
+import { RootStackParamList } from '../navigation/types';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+type YouScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'You'>;
 
 type IntentData = {
     id?: string;
@@ -19,7 +23,9 @@ const windowWidth = Dimensions.get('window').width;
 const GRID_ITEM_WIDTH = (windowWidth - 24) / 2;
 
 export default function Feed() {
-    const navigation = useNavigation();
+    // const navigation = useNavigation();
+    const navigation = useNavigation<YouScreenNavigationProp>();
+
     const [activeFilter, setActiveFilter] = useState('feed');
     const [showIntentCapture, setShowIntentCapture] = useState(false);
     const [currentIntent, setCurrentIntent] = useState(null);
@@ -63,7 +69,7 @@ export default function Feed() {
                                 key={tab.id}
                                 onPress={() => {
                                     if (tab.id === 'you') {
-                                        navigation.navigate('You' as never);
+                                        navigation.navigate('You');
                                     } else {
                                         setActiveFilter(tab.id);
                                     }

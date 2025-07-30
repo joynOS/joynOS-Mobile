@@ -33,6 +33,7 @@ import Welcome from './src/screens/Welcome';
 import PersonalityQuiz from './src/screens/PersonalityQuiz';
 import InterestSelector from './src/screens/InterestSelector';
 import Feed from './src/screens/Feed';
+import You from './src/screens/You';
 
 const Stack = createNativeStackNavigator();
 
@@ -45,6 +46,7 @@ export default function App() {
           <Stack.Screen name="PersonalityQuiz" component={PersonalityQuiz} />
           <Stack.Screen name="InterestSelector" component={InterestSelector} />
           <Stack.Screen name="Feed" component={Feed} />
+          <Stack.Screen name="You" component={You} />
         </Stack.Navigator>
       </NavigationContainer>
     </Provider>
