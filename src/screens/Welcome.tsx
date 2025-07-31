@@ -1,20 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import { 
-    View, Text, Image, StyleSheet, ScrollView, KeyboardAvoidingView, 
-    Platform, SafeAreaView, StatusBar 
+import {
+    View, Text, Image, StyleSheet, ScrollView, KeyboardAvoidingView,
+    Platform, SafeAreaView, StatusBar
 } from 'react-native';
 
 import Button from '../components/Button';
 import PhoneAuth from '../components/PhoneAuth';
 import LoadingSpinner from '../components/LoadSpinner';
+import AppleIcon from '../components/icons/AppleIcon';
 import { useAssets } from 'expo-asset';
 
 import { RootStackParamList } from '../navigation/types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { useGoogleAuth } from '../hooks/googleLogin';
-import { GoogleSigninButton } from '@react-native-google-signin/google-signin';
+import GoogleIcon from '../components/icons/GoogleIcon';
+import FacebookIcon from '../components/icons/FacebookIcon';
 
 
 
@@ -22,6 +24,7 @@ type PersonalityQuizNavigationProp = NativeStackNavigationProp<RootStackParamLis
 
 export default function Welcome() {
     const navigation = useNavigation<PersonalityQuizNavigationProp>();
+    const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [showPhoneAuth, setShowPhoneAuth] = useState(false);
     const [phone, setPhone] = useState('');
@@ -30,134 +33,148 @@ export default function Welcome() {
     const { request, promptAsync, response } = useGoogleAuth();
 
     useEffect(() => {
-      if (response?.type === 'success') {
-        setIsLoading(true);
-        // aguarda o signInWithCredential do hook, então navega
-        // ou você pode mover o navigate para dentro do hook se preferir
-        navigation.navigate('PersonalityQuiz');
-        setIsLoading(false);
-      }
+        if (response?.type === 'success') {
+            setIsLoading(true);
+            // aguarda o signInWithCredential do hook, então navega
+            // ou você pode mover o navigate para dentro do hook se preferir
+            navigation.navigate('PersonalityQuiz');
+            setIsLoading(false);
+        }
     }, [response]);
 
     const handleGoogleSignIn = () => {
-      promptAsync();
+        promptAsync();
     };
+
+    // const handleSocialAuth = async (provider: string) => {
+    //   if (provider === 'google') {
+    //     handleGoogleSignIn();
+    //     return;
+    //   }
+    //   try {
+    //       setIsLoading(true);
+    //       await new Promise((res) => setTimeout(res, 1500));
+    //       navigation.navigate('PersonalityQuiz');
+    //   } catch (error) {
+    //       console.error('Auth error:', error);
+    //   } finally {
+    //       setIsLoading(false);
+    //   }
+    // };
 
     const handleSocialAuth = async (provider: string) => {
-      if (provider === 'google') {
-        handleGoogleSignIn();
-        return;
-      }
-      try {
-          setIsLoading(true);
-          await new Promise((res) => setTimeout(res, 1500));
-          navigation.navigate('PersonalityQuiz');
-      } catch (error) {
-          console.error('Auth error:', error);
-      } finally {
-          setIsLoading(false);
-      }
+        try {
+            setLoadingProvider(provider);
+            if (provider === 'google') {
+                await handleGoogleSignIn();
+            } else {
+                await new Promise((res) => setTimeout(res, 1500));
+            }
+            navigation.navigate('PersonalityQuiz');
+        } catch (error) {
+            console.error('Auth error:', error);
+        } finally {
+            setLoadingProvider(null);
+        }
     };
 
+
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-            {/* Header com logo */}
-            <View style={styles.header}>
-              <View style={styles.logoWrapper}>
-                <View style={styles.logoGlow} />
-                {assets ? (
-                  <Image source={{ uri: assets[0].localUri || assets[0].uri }} style={styles.logo} />
-                ) : (
-                  <LoadingSpinner size="sm" />
-                )}
-              </View>
-              <Text style={styles.title}>Welcome to Joyn</Text>
-              <Text style={styles.subtitle}>
-                Discover events that match your vibe.{'\n'}
-                Meet people who share your energy.
-              </Text>
-            </View>
+        <SafeAreaView style={styles.safeArea}>
+            <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+                <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+                    {/* Header com logo */}
+                    <View style={styles.header}>
+                        <View style={styles.logoWrapper}>
+                            <View style={styles.logoGlow} />
+                            {assets ? (
+                                <Image source={{ uri: assets[0].localUri || assets[0].uri }} style={styles.logo} />
+                            ) : (
+                                <LoadingSpinner size="sm" />
+                            )}
+                        </View>
+                        <Text style={styles.title}>Welcome to Joyn</Text>
+                        <Text style={styles.subtitle}>
+                            Discover events that match your vibe.{'\n'}
+                            Meet people who share your energy.
+                        </Text>
+                    </View>
 
-            {/* Conteúdo principal */}
-            <View style={styles.card}>
-              {!showPhoneAuth ? (
-                <>
-                  <Button
-                    onPress={() => handleSocialAuth('google')}
-                    loading={isLoading}
-                    disabled={!request}
-                    style={[styles.socialButton, styles.googleButton]}
-                    title={isLoading ? '' : 'Continue with Google'}
-                  >
-                    {isLoading ? (
-                      <LoadingSpinner size="sm" />
-                    ) : (
-                      <GoogleIcon />
-                    )}
-                  </Button>
+                    {/* Conteúdo principal */}
+                    <View style={styles.card}>
+                        {!showPhoneAuth ? (
+                            <>
+                                <Button
+                                    onPress={() => handleSocialAuth('google')}
+                                    loading={loadingProvider === 'google'}
+                                    disabled={!request || loadingProvider !== null}
+                                    style={[styles.socialButton, styles.googleButton]}
+                                    title={loadingProvider === 'google' ? '' : 'Continue with Google'}
+                                >
+                                    {loadingProvider === 'google' ? (
+                                        <LoadingSpinner size="sm" />
+                                    ) : (
+                                        <GoogleIcon />
+                                    )}
+                                </Button>
 
-                  <Button
-                    onPress={() => handleSocialAuth('facebook')}
-                    loading={isLoading}
-                    style={[styles.socialButton, styles.facebookButton]}
-                    title={isLoading ? '' : 'Continue with Facebook'}
-                  >
-                    {isLoading ? (
-                      <LoadingSpinner size="sm" />
-                    ) : (
-                      <FacebookIcon />
-                    )}
-                  </Button>
+                                <Button
+                                    onPress={() => handleSocialAuth('apple')}
+                                    loading={loadingProvider === 'apple'}
+                                    disabled={loadingProvider !== null}
+                                    style={[styles.socialButton, styles.googleButton]}
+                                    title={loadingProvider === 'apple' ? '' : 'Continue with Apple'}
+                                >
+                                    {loadingProvider === 'apple' ? (
+                                        <LoadingSpinner size="sm" />
+                                    ) : (
+                                        <AppleIcon />
+                                    )}
+                                </Button>
 
-                  <Text style={styles.orText}>or</Text>
+                                <Button
+                                    onPress={() => handleSocialAuth('facebook')}
+                                    loading={loadingProvider === 'facebook'}
+                                    disabled={loadingProvider !== null}
+                                    style={[styles.socialButton, styles.facebookButton]}
+                                    title={loadingProvider === 'facebook' ? '' : 'Continue with Facebook'}
+                                >
+                                    {loadingProvider === 'facebook' ? (
+                                        <LoadingSpinner size="sm" />
+                                    ) : (
+                                        <FacebookIcon />
+                                    )}
+                                </Button>
 
-                  <Button
-                    onPress={() => setShowPhoneAuth(true)}
-                    style={styles.phoneButton}
-                    title="Continue with Phone"
-                  />
-                </>
-              ) : (
-                <PhoneAuth
-                  phone={phone}
-                  setPhone={setPhone}
-                  onSubmit={() => navigation.navigate('PersonalityQuiz' as never)}
-                  onBack={() => setShowPhoneAuth(false)}
-                />
-              )}
-            </View>
 
-            <Text style={styles.footerText}>
-              By continuing, you agree to our{' '}
-              <Text style={styles.linkText}>Terms</Text> and{' '}
-              <Text style={styles.linkText}>Privacy Policy</Text>
-            </Text>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
+                                <Text style={styles.orText}>or</Text>
+
+                                <Button
+                                    onPress={() => setShowPhoneAuth(true)}
+                                    style={styles.phoneButton}
+                                    title="Continue with Phone"
+                                />
+                            </>
+                        ) : (
+                            <PhoneAuth
+                                phone={phone}
+                                setPhone={setPhone}
+                                onSubmit={() => navigation.navigate('PersonalityQuiz' as never)}
+                                onBack={() => setShowPhoneAuth(false)}
+                            />
+                        )}
+                    </View>
+
+                    <Text style={styles.footerText}>
+                        By continuing, you agree to our{' '}
+                        <Text style={styles.linkText}>Terms</Text> and{' '}
+                        <Text style={styles.linkText}>Privacy Policy</Text>
+                    </Text>
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 }
-
-const GoogleIcon = () => (
-  <View style={{ marginRight: 8 }}>
-    <Image
-      source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg' }}
-      style={{ width: 20, height: 20 }}
-    />
-  </View>
-);
-
-const FacebookIcon = () => (
-  <View style={{ marginRight: 8 }}>
-    <Image
-      source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_(2019).png' }}
-      style={{ width: 20, height: 20, tintColor: 'white' }}
-      resizeMode="contain"
-    />
-  </View>
-);
 
 const styles = StyleSheet.create({
 
@@ -240,8 +257,8 @@ const styles = StyleSheet.create({
         borderWidth: 1,
     },
     facebookButton: {
-        backgroundColor: 'rgba(59, 89, 152, 0.8)',
-        borderColor: 'rgba(59, 89, 152, 1)',
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        borderColor: 'rgba(255,255,255,0.2)',
         borderWidth: 1,
     },
     phoneButton: {
