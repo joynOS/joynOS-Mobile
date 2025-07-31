@@ -1,12 +1,13 @@
-import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, TouchableOpacityProps } from 'react-native';
+import React, { ReactNode } from 'react';
+import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, TouchableOpacityProps, View } from 'react-native';
 
 interface ButtonProps extends TouchableOpacityProps {
-    title: string;
+    title?: string;
     loading?: boolean;
+    children?: ReactNode;
 }
 
-export const Button: React.FC<ButtonProps> = ({ title, loading, style, ...props }) => {
+export const Button: React.FC<ButtonProps> = ({ title, loading, children, style, ...props }) => {
     return (
         <TouchableOpacity
             style={[styles.button, style, props.disabled && styles.disabled]}
@@ -16,7 +17,10 @@ export const Button: React.FC<ButtonProps> = ({ title, loading, style, ...props 
             {loading ? (
                 <ActivityIndicator color="#fff" />
             ) : (
-                <Text style={styles.text}>{title}</Text>
+                <View style={styles.content}>
+                  {children}
+                  {title && <Text style={styles.text}>{title}</Text>}
+                </View>
             )}
         </TouchableOpacity>
     );
@@ -28,11 +32,19 @@ const styles = StyleSheet.create({
         paddingVertical: 16,
         borderRadius: 8,
         alignItems: 'center',
+        flexDirection: 'row', 
+        justifyContent: 'center',
+    },
+    content: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     text: {
         color: '#fff',
         fontWeight: '600',
         fontSize: 16,
+        marginLeft: 8, 
     },
     disabled: {
         opacity: 0.6,
