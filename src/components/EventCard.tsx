@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image, ImageBackground, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, Image, ImageBackground, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Button from '../components/Button';
 import { Badge } from '../components/Badge';
@@ -40,22 +40,20 @@ export default function EventCard({ event, onTap, variant = 'card' }: EventCardP
         return '#3b82f6';
     };
 
+    const imageUri = event.imageUrl || `https://source.unsplash.com/collection/190727/800x1200?sig=${event.id}`;
+
     return (
         <View style={[styles.cardContainer, variant === 'full' && styles.cardContainerFull]}>
             <ImageBackground
-                source={{
-                    uri:
-                        event.imageUrl ||
-                        'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&h=1200&fit=crop',
-                }}
+                source={{ uri: imageUri }}
                 style={styles.imageBackground}
-                imageStyle={styles.image}
+                imageStyle={[styles.image, variant === 'full' && styles.imageFull]}
             >
                 {/* Gradient Overlay */}
                 <View style={styles.gradientOverlay} />
 
                 {/* Content Overlay */}
-                <View style={styles.contentOverlay}>
+                <View style={[styles.contentOverlay, variant === 'full' && styles.contentOverlayFull]}>
                     <View style={styles.headerRow}>
                         <Badge
                             variant="default"
@@ -127,7 +125,7 @@ export default function EventCard({ event, onTap, variant = 'card' }: EventCardP
                 </View>
 
                 {/* Side Actions */}
-                <View style={styles.sideActions}>
+                <View style={[styles.sideActions, variant === 'full' && styles.sideActionsFull]}>
                     {/* <TouchableOpacity style={styles.iconButton}>
                         <Heart size={20} color="white" />
                     </TouchableOpacity>
@@ -168,8 +166,14 @@ const styles = StyleSheet.create({
     imageBackground: {
         flex: 1,
         justifyContent: 'flex-end',
+        backgroundColor: '#000',
     },
     image: {
+        resizeMode: 'cover',
+        backgroundColor: '#111',
+    },
+    imageFull: {
+        // Ensures full-bleed coverage in full variant
         resizeMode: 'cover',
     },
     gradientOverlay: {
@@ -179,6 +183,9 @@ const styles = StyleSheet.create({
     contentOverlay: {
         padding: 20,
         zIndex: 2,
+    },
+    contentOverlayFull: {
+        paddingBottom: 32,
     },
     headerRow: {
         flexDirection: 'row',
@@ -265,6 +272,9 @@ const styles = StyleSheet.create({
         zIndex: 3,
         alignItems: 'center',
         gap: 12,
+    },
+    sideActionsFull: {
+        top: '45%',
     },
     iconButton: {
         width: 40,

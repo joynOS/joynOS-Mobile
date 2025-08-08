@@ -78,13 +78,13 @@ export function generateMockEvents(count: number, startId = 1000): Event[] {
     );
 
     const imageSeed = 1492684223066 + id;
-
+    console.log(`https://picsum.photos/800/1200?random=${imageSeed}`);
     events.push({
       id,
       title: randomTitle(category),
       description:
         "Curated by Joyn OS — AI‑generated plan options and lobby chat included.",
-      imageUrl: `https://images.unsplash.com/photo-${imageSeed}?w=800&h=1200&fit=crop`,
+      imageUrl: `https://picsum.photos/800/1200?random=${imageSeed}`,
       location: {
         lat: 40.7128 + Math.random() * 0.1 - 0.05,
         lng: -74.006 + Math.random() * 0.1 - 0.05,
