@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { ArrowLeft } from 'lucide-react-native';
 import { Button } from '../components/Button';
 import LoadingSpinner from '../components/LoadSpinner';
@@ -9,16 +9,20 @@ import DistanceSlider from '../components/DistanceSlider';
 import { INTERESTS } from '../utils';
 import { RootStackParamList } from '../navigation/types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useAuth } from '../contexts/AuthContext';
 
-type FeedNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Feed'>;
-
+type InterestSelectorNavigationProp = NativeStackNavigationProp<RootStackParamList, 'InterestSelector'>;
+type InterestSelectorRouteProp = RouteProp<RootStackParamList, 'InterestSelector'>;
 
 export default function InterestSelector() {
-    //const navigation = useNavigation();
-    const navigation = useNavigation<FeedNavigationProp>();
+    const navigation = useNavigation<InterestSelectorNavigationProp>();
+    const route = useRoute<InterestSelectorRouteProp>();
     const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
     const [radius, setRadius] = useState(10);
     const [isLoading, setIsLoading] = useState(false);
+    const { loginWithPhone } = useAuth();
+    
+    const phone = route.params?.phone;
 
     const toggleInterest = (interest: string) => {
         setSelectedInterests(prev =>
@@ -32,9 +36,9 @@ export default function InterestSelector() {
         if (selectedInterests.length < 3) return;
         setIsLoading(true);
 
-        setTimeout(() => {
+        setTimeout(async () => {
+            await loginWithPhone(phone || '+5511999999999');
             setIsLoading(false);
-            navigation.navigate('Feed'); 
         }, 1500);
     };
 

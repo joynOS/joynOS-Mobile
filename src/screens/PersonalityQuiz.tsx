@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, ImageBackground, TouchableOpacity, StyleSheet, FlatList, Image, ScrollView } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import QuizHeader from '../components/QuizHeader';
 import Button from '../components/Button';
 import { QUIZ_QUESTIONS } from '../utils';
@@ -8,13 +8,16 @@ import { QUIZ_QUESTIONS } from '../utils';
 import { RootStackParamList } from '../navigation/types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-type InterestSelectorNavigationProp = NativeStackNavigationProp<RootStackParamList, 'InterestSelector'>;
+type PersonalityQuizNavigationProp = NativeStackNavigationProp<RootStackParamList, 'PersonalityQuiz'>;
+type PersonalityQuizRouteProp = RouteProp<RootStackParamList, 'PersonalityQuiz'>;
 
 export default function PersonalityQuiz() {
-    // const navigation = useNavigation();
-    const navigation = useNavigation<InterestSelectorNavigationProp>();
+    const navigation = useNavigation<PersonalityQuizNavigationProp>();
+    const route = useRoute<PersonalityQuizRouteProp>();
     const [currentQuestion, setCurrentQuestion] = useState(0);
     const [answers, setAnswers] = useState<Record<number, string>>({});
+    
+    const phone = route.params?.phone;
 
     const question = QUIZ_QUESTIONS[currentQuestion];
     const selectedAnswer = answers[question.id];
@@ -27,7 +30,7 @@ export default function PersonalityQuiz() {
         if (currentQuestion < QUIZ_QUESTIONS.length - 1) {
             setCurrentQuestion(prev => prev + 1);
         } else {
-            navigation.navigate('InterestSelector');
+            navigation.navigate('InterestSelector', { phone });
         }
     };
 

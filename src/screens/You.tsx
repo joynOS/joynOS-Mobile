@@ -226,7 +226,7 @@ export default function You() {
 
                     <View style={styles.headerRight}>
                         <Button
-                            //onPress={() => navigation.navigate('profile')}
+                            onPress={() => navigation.navigate('Profile')}
                             style={styles.iconButton}
                             title=""
                         >

@@ -1,34 +1,37 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Provider } from 'react-redux';
+import { View, ActivityIndicator } from 'react-native';
 
 import { store } from './src/shared/store';
+import { AuthProvider, useAuth } from './src/contexts/AuthContext';
+import { PublicNavigator } from './src/navigation/PublicNavigator';
+import { PrivateNavigator } from './src/navigation/PrivateNavigator';
 
-import Welcome from './src/screens/Welcome';
-import PersonalityQuiz from './src/screens/PersonalityQuiz';
-import InterestSelector from './src/screens/InterestSelector';
-import Feed from './src/screens/Feed';
-import You from './src/screens/You';
-import Search from './src/screens/Search';
-import Map from './src/screens/Map';
+const AppContent = () => {
+  const { user, loading } = useAuth();
 
-const Stack = createNativeStackNavigator();
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000000' }}>
+        <ActivityIndicator size="large" color="#00C48C" />
+      </View>
+    );
+  }
+
+  return (
+    <NavigationContainer>
+      {user ? <PrivateNavigator /> : <PublicNavigator />}
+    </NavigationContainer>
+  );
+};
 
 export default function App() {
   return (
     <Provider store={store}>
-      <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Welcome" component={Welcome} />
-          <Stack.Screen name="PersonalityQuiz" component={PersonalityQuiz} />
-          <Stack.Screen name="InterestSelector" component={InterestSelector} />
-          <Stack.Screen name="Feed" component={Feed} />
-          <Stack.Screen name="You" component={You} /> 
-          <Stack.Screen name="Search" component={Search} />
-          <Stack.Screen name="Map" component={Map} />
-        </Stack.Navigator>
-      </NavigationContainer>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </Provider>
   );
 }

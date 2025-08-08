@@ -5,9 +5,9 @@ import { auth } from './firebase';
 
 export function useGoogleAuth() {
     const [request, response, promptAsync] = Google.useAuthRequest({
-        androidClientId: '972476786068-v9edhiv4u0e9slcqtjb47efqm3es6s1c.apps.googleusercontent.com',
-        clientId: 'd6d97339-42d2-479a-b1f8-4b907a205e83.apps.googleusercontent.com',
-        webClientId: '972476786068-tp5lpjjtm2mh6esj9iplj8l86tom1odi.apps.googleusercontent.com',
+        androidClientId: '731683393524-8q359dv37vdnu8rcdocchpuqtfnn8g1h.apps.googleusercontent.com',
+        clientId: '731683393524-8q359dv37vdnu8rcdocchpuqtfnn8g1h.apps.googleusercontent.com',
+        webClientId: '731683393524-am36m7i43s2evv9ju99it2t7b8e385dk.apps.googleusercontent.com',
     });
 
     React.useEffect(() => {
