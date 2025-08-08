@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, Dimensions, ActivityIndicator, FlatList, RefreshControl, TouchableWithoutFeedback } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Button from '../components/Button';
 import EventCard from '../components/EventCard';
@@ -30,6 +31,7 @@ export default function Feed() {
     const [activeFilter, setActiveFilter] = useState('feed');
     const [showIntentCapture, setShowIntentCapture] = useState(false);
     const [currentIntent, setCurrentIntent] = useState(null);
+    const insets = useSafeAreaInsets();
 
     // Local mock state for TikTok-like feed
     const [feedEvents, setFeedEvents] = useState(generateMockEvents(6));
@@ -54,6 +56,13 @@ export default function Feed() {
             </View>
         );
     }
+
+    // Calculate viewport height for snap pagination (area below header)
+    const HEADER_OFFSET = 96; // matches styles.content marginTop
+    const VIEWPORT_HEIGHT = useMemo(() => {
+        const h = Dimensions.get('window').height - HEADER_OFFSET;
+        return h > 0 ? h : Dimensions.get('window').height;
+    }, [insets.top]);
 
     return (
         <View style={styles.container}>
@@ -135,12 +144,19 @@ export default function Feed() {
                         keyExtractor={(item) => String(item.id)}
                         renderItem={({ item }) => (
                             <TouchableWithoutFeedback onPress={() => navigation.navigate('EventDetail' as never, { id: item.id } as never)}>
-                                <View style={{ height: Dimensions.get('window').height, backgroundColor: '#000' }}>
+                                <View style={{ height: VIEWPORT_HEIGHT, backgroundColor: '#000' }}>
                                     <EventCard event={item} variant="full" />
                                 </View>
                             </TouchableWithoutFeedback>
                         )}
-                        pagingEnabled
+                        snapToInterval={VIEWPORT_HEIGHT}
+                        snapToAlignment="start"
+                        decelerationRate="fast"
+                        disableIntervalMomentum
+                        initialNumToRender={3}
+                        windowSize={5}
+                        removeClippedSubviews
+                        getItemLayout={(_, index) => ({ length: VIEWPORT_HEIGHT, offset: VIEWPORT_HEIGHT * index, index })}
                         showsVerticalScrollIndicator={false}
                         onEndReachedThreshold={0.6}
                         onEndReached={() => {
