@@ -118,11 +118,12 @@ export default function EventCard({ event, onTap, variant = 'card' }: EventCardP
                         <Text style={styles.memberText}>{memberCount} interested</Text>
                     </View>
 
-                    {/* Buttons */}
-                    <View style={styles.buttonRow}>
-                        <Button title="Join Now" onPress={handleJoinEvent} />
-                        <Button title="Learn More" onPress={onTap} />
-                    </View>
+                    {variant !== 'full' && (
+                        <View style={styles.buttonRow}>
+                            <Button title="Join Now" onPress={handleJoinEvent} />
+                            <Button title="Learn More" onPress={onTap} />
+                        </View>
+                    )}
                 </View>
 
                 {/* Side Actions */}

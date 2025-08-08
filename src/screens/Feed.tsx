@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, Dimensions, ActivityIndicator, FlatList, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, Dimensions, ActivityIndicator, FlatList, RefreshControl, TouchableWithoutFeedback } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Button from '../components/Button';
 import EventCard from '../components/EventCard';
@@ -134,9 +134,11 @@ export default function Feed() {
                         data={feedEvents}
                         keyExtractor={(item) => String(item.id)}
                         renderItem={({ item }) => (
-                            <View style={{ height: Dimensions.get('window').height, backgroundColor: '#000' }}>
-                                <EventCard event={item} variant="full" onTap={() => {}} />
-                            </View>
+                            <TouchableWithoutFeedback onPress={() => navigation.navigate('EventDetail' as never, { id: item.id } as never)}>
+                                <View style={{ height: Dimensions.get('window').height, backgroundColor: '#000' }}>
+                                    <EventCard event={item} variant="full" />
+                                </View>
+                            </TouchableWithoutFeedback>
                         )}
                         pagingEnabled
                         showsVerticalScrollIndicator={false}

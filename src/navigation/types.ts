@@ -9,4 +9,5 @@ export type RootStackParamList = {
   Profile: undefined;
   Terms: undefined;
   Privacy: undefined;
+  EventDetail: { id: number };
 };
