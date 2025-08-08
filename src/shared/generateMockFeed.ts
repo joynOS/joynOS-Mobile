@@ -50,8 +50,8 @@ export function generateMockEvents(count: number, startId = 1000): Event[] {
   for (let i = 0; i < count; i++) {
     const id = startId + i;
     const category = randomFrom(categories);
-    const startOffsetHours = Math.floor(Math.random() * 24 * 14) - 24; // -24h to +13 days
-    const durationHours = Math.floor(Math.random() * 4) + 2; // 2-5 hours
+    const startOffsetHours = Math.floor(Math.random() * 24 * 14) - 24;
+    const durationHours = Math.floor(Math.random() * 4) + 2;
     const startTime = new Date(now + startOffsetHours * 60 * 60 * 1000);
     const endTime = new Date(startTime.getTime() + durationHours * 60 * 60 * 1000);
 
@@ -61,7 +61,7 @@ export function generateMockEvents(count: number, startId = 1000): Event[] {
       id,
       title: randomTitle(category),
       description: 'Curated by Joyn OS — AI‑generated plan options and lobby chat included.',
-      imageUrl: `https://images.unsplash.com/photo-${imageSeed}?w=800&h=1200&fit=crop`;
+      imageUrl: `https://images.unsplash.com/photo-${imageSeed}?w=800&h=1200&fit=crop`,
       location: {
         lat: 40.7128 + Math.random() * 0.1 - 0.05,
         lng: -74.0060 + Math.random() * 0.1 - 0.05,
