@@ -20,10 +20,10 @@ import FacebookIcon from '../components/icons/FacebookIcon';
 
 
 
-type PersonalityQuizNavigationProp = NativeStackNavigationProp<RootStackParamList, 'PersonalityQuiz'>;
+type WelcomeNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Welcome'>;
 
 export default function Welcome() {
-    const navigation = useNavigation<PersonalityQuizNavigationProp>();
+    const navigation = useNavigation<WelcomeNavigationProp>();
     const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [showPhoneAuth, setShowPhoneAuth] = useState(false);
@@ -35,9 +35,6 @@ export default function Welcome() {
     useEffect(() => {
         if (response?.type === 'success') {
             setIsLoading(true);
-            // aguarda o signInWithCredential do hook, então navega
-            // ou você pode mover o navigate para dentro do hook se preferir
-            navigation.navigate('PersonalityQuiz');
             setIsLoading(false);
         }
     }, [response]);
@@ -67,10 +64,11 @@ export default function Welcome() {
             setLoadingProvider(provider);
             if (provider === 'google') {
                 await handleGoogleSignIn();
+                return;
             } else {
                 await new Promise((res) => setTimeout(res, 1500));
+                navigation.navigate('PersonalityQuiz', {});
             }
-            navigation.navigate('PersonalityQuiz');
         } catch (error) {
             console.error('Auth error:', error);
         } finally {
@@ -159,7 +157,7 @@ export default function Welcome() {
                             <PhoneAuth
                                 phone={phone}
                                 setPhone={setPhone}
-                                onSubmit={() => navigation.navigate('PersonalityQuiz' as never)}
+                                onSubmit={() => navigation.navigate('PersonalityQuiz', { phone })}
                                 onBack={() => setShowPhoneAuth(false)}
                             />
                         )}
@@ -167,8 +165,8 @@ export default function Welcome() {
 
                     <Text style={styles.footerText}>
                         By continuing, you agree to our{' '}
-                        <Text style={styles.linkText}>Terms</Text> and{' '}
-                        <Text style={styles.linkText}>Privacy Policy</Text>
+                        <Text style={styles.linkText} onPress={() => navigation.navigate('Terms')}>Terms</Text> and{' '}
+                        <Text style={styles.linkText} onPress={() => navigation.navigate('Privacy')}>Privacy Policy</Text>
                     </Text>
                 </ScrollView>
             </KeyboardAvoidingView>
