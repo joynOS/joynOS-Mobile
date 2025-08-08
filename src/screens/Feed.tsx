@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, Dimensions, ActivityIndicator, FlatList, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Button from '../components/Button';
 import EventCard from '../components/EventCard';
@@ -9,6 +9,7 @@ import Spinner from '../components/Spinner';
 import { Filter, Plus, Search, User } from 'lucide-react-native'; 
 import { LinearGradient } from 'expo-linear-gradient';
 import { useGetDiscoverFeedQuery } from '../shared/eventSlice';
+import { generateMockEvents } from '../shared/generateMockFeed';
 import { RootStackParamList } from '../navigation/types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
@@ -30,6 +31,12 @@ export default function Feed() {
     const [showIntentCapture, setShowIntentCapture] = useState(false);
     const [currentIntent, setCurrentIntent] = useState(null);
 
+    // Local mock state for TikTok-like feed
+    const [feedEvents, setFeedEvents] = useState(generateMockEvents(6));
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+    // Keep existing API hook (can be integrated later)
     const { data: events, isLoading } = useGetDiscoverFeedQuery({});
 
     useEffect(() => {}, []);
@@ -92,7 +99,7 @@ export default function Feed() {
 
                 <View style={styles.headerRight}>
                     <Button
-                        onPress={() => navigation.navigate('profile' as never)}
+                        onPress={() => navigation.navigate('Profile' as never)}
                         style={styles.iconButton}
                         title=""
                     >
@@ -123,28 +130,45 @@ export default function Feed() {
             {/* Content */}
             <View style={styles.content}>
                 {activeFilter === 'feed' ? (
-                    events && events.length > 0 ? (
-                        <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
-                            {events.map((event, index) => (
-                                <EventCard
-                                    key={event.id}
-                                    event={event}
-                                    isActive={index === 0}
-                                    onTap={() => navigation.navigate(`/event/${event.id}` as never)}
-                                />
-                            ))}
-                        </ScrollView>
-                    ) : (
-                        <View style={styles.emptyContainer}>
-                            <View style={styles.emptyCircle}>
-                                <Plus size={32} color="#999" />
+                    <FlatList
+                        data={feedEvents}
+                        keyExtractor={(item) => String(item.id)}
+                        renderItem={({ item }) => (
+                            <View style={{ height: Dimensions.get('window').height, backgroundColor: '#000' }}>
+                                <EventCard event={item} variant="full" onTap={() => {}} />
                             </View>
-                            <Text style={styles.emptyTitle}>No events found</Text>
-                            <Text style={styles.emptySubtitle}>
-                                Try adjusting your filters or check back later
-                            </Text>
-                        </View>
-                    )
+                        )}
+                        pagingEnabled
+                        showsVerticalScrollIndicator={false}
+                        onEndReachedThreshold={0.6}
+                        onEndReached={() => {
+                            if (isLoadingMore) return;
+                            setIsLoadingMore(true);
+                            setTimeout(() => {
+                                setFeedEvents((prev) => [...prev, ...generateMockEvents(5, prev[prev.length - 1].id + 1)]);
+                                setIsLoadingMore(false);
+                            }, 600);
+                        }}
+                        refreshControl={(
+                            <RefreshControl
+                                tintColor="#00C48C"
+                                refreshing={isRefreshing}
+                                onRefresh={() => {
+                                    setIsRefreshing(true);
+                                    setTimeout(() => {
+                                        // Simulate a refresh with a new leading set
+                                        setFeedEvents(generateMockEvents(6, Math.floor(Math.random() * 1000) + 2000));
+                                        setIsRefreshing(false);
+                                    }, 700);
+                                }}
+                            />
+                        )}
+                        ListFooterComponent={isLoadingMore ? (
+                            <View style={{ padding: 16 }}>
+                                <ActivityIndicator color="#00C48C" />
+                            </View>
+                        ) : null}
+                    />
                 ) : (
                     /* Discovery View */
                     <View style={styles.discoveryContainer}>

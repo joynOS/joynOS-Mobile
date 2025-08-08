@@ -12,9 +12,10 @@ interface EventCardProps {
     event: Event;
     isActive?: boolean;
     onTap?: () => void;
+    variant?: 'card' | 'full';
 }
 
-export default function EventCard({ event, onTap }: EventCardProps) {
+export default function EventCard({ event, onTap, variant = 'card' }: EventCardProps) {
     const navigation = useNavigation();
     const compatibilityScore = Math.floor(Math.random() * 20) + 80;
     const memberCount = Math.floor(Math.random() * 20) + 5;
@@ -40,7 +41,7 @@ export default function EventCard({ event, onTap }: EventCardProps) {
     };
 
     return (
-        <View style={styles.cardContainer}>
+        <View style={[styles.cardContainer, variant === 'full' && styles.cardContainerFull]}>
             <ImageBackground
                 source={{
                     uri:
@@ -158,6 +159,10 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         overflow: 'hidden',
         position: 'relative',
+    },
+    cardContainerFull: {
+        height: '100%',
+        borderRadius: 0,
     },
     imageBackground: {
         flex: 1,
