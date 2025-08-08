@@ -34,21 +34,21 @@ export default function Profile() {
 
   const handleLogout = async () => {
     Alert.alert(
-      'Confirmar Logout',
-      'Tem certeza de que deseja sair da sua conta?',
+      'Confirm logout',
+      'Are you sure you want to sign out?',
       [
         {
-          text: 'Cancelar',
+          text: 'Cancel',
           style: 'cancel',
         },
         {
-          text: 'Sair',
+          text: 'Sign out',
           style: 'destructive',
           onPress: async () => {
             try {
               await logout();
             } catch (error) {
-              Alert.alert('Erro', 'Não foi possível fazer logout. Tente novamente.');
+              Alert.alert('Error', 'Could not sign out. Please try again.');
             }
           },
         },
@@ -59,32 +59,32 @@ export default function Profile() {
   const menuItems = [
     {
       icon: Settings,
-      title: 'Configurações',
-      subtitle: 'Preferências e configurações do app',
+      title: 'Settings',
+      subtitle: 'App preferences and settings',
       onPress: () => console.log('Configurações'),
     },
     {
       icon: Bell,
-      title: 'Notificações',
-      subtitle: 'Gerencie suas notificações',
+      title: 'Notifications',
+      subtitle: 'Manage your notifications',
       onPress: () => console.log('Notificações'),
     },
     {
       icon: Shield,
-      title: 'Privacidade e Segurança',
-      subtitle: 'Controle de privacidade e dados',
+      title: 'Privacy & Security',
+      subtitle: 'Privacy and data controls',
       onPress: () => console.log('Privacidade'),
     },
     {
       icon: HelpCircle,
-      title: 'Ajuda e Suporte',
-      subtitle: 'Central de ajuda e suporte',
+      title: 'Help & Support',
+      subtitle: 'Help center and support',
       onPress: () => console.log('Ajuda'),
     },
     {
       icon: Info,
-      title: 'Sobre',
-      subtitle: 'Informações sobre o JoynOS',
+      title: 'About',
+      subtitle: 'Information about Joyn OS',
       onPress: () => console.log('Sobre'),
     },
   ];
@@ -101,7 +101,7 @@ export default function Profile() {
         >
           <ChevronLeft size={24} color="white" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Perfil</Text>
+        <Text style={styles.headerTitle}>Profile</Text>
         <View style={styles.headerRight} />
       </View>
 
@@ -113,7 +113,7 @@ export default function Profile() {
           </View>
         </View>
         <Text style={styles.userName}>
-          {user?.displayName || user?.email || 'Usuário JoynOS'}
+          {user?.displayName || user?.email || 'Joyn OS User'}
         </Text>
         {user?.email && (
           <Text style={styles.userEmail}>{user.email}</Text>
@@ -153,7 +153,7 @@ export default function Profile() {
         >
           <View style={styles.logoutButtonContent}>
             <LogOut size={20} color="#EF4444" />
-            <Text style={styles.logoutButtonText}>Sair da Conta</Text>
+            <Text style={styles.logoutButtonText}>Sign out</Text>
           </View>
         </Button>
       </View>
