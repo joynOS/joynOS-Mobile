@@ -49,6 +49,13 @@ export default function Feed() {
         { id: 'discovery', label: 'Discovery' },
     ];
 
+    // Calculate viewport height for snap pagination (area below header)
+    const HEADER_OFFSET = 96; // matches styles.content marginTop
+    const VIEWPORT_HEIGHT = useMemo(() => {
+        const h = Dimensions.get('window').height - HEADER_OFFSET;
+        return h > 0 ? h : Dimensions.get('window').height;
+    }, [insets.top]);
+
     if (isLoading) {
         return (
             <View style={styles.loadingContainer}>
@@ -56,13 +63,6 @@ export default function Feed() {
             </View>
         );
     }
-
-    // Calculate viewport height for snap pagination (area below header)
-    const HEADER_OFFSET = 96; // matches styles.content marginTop
-    const VIEWPORT_HEIGHT = useMemo(() => {
-        const h = Dimensions.get('window').height - HEADER_OFFSET;
-        return h > 0 ? h : Dimensions.get('window').height;
-    }, [insets.top]);
 
     return (
         <View style={styles.container}>
