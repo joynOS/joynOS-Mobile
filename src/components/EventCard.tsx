@@ -1,10 +1,11 @@
-import React from 'react';
-import { View, Text, Image, ImageBackground, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Image, ImageBackground, StyleSheet, TouchableOpacity, Share } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Button from '../components/Button';
 import { Badge } from '../components/Badge';
-import { Heart, Share2, Bookmark, Clock, MapPin } from 'lucide-react-native';
-import { BlurView } from 'expo-blur';
+import { computeMatchScore } from '../shared/match';
+import { Clock, MapPin } from 'lucide-react-native';
+import { AntDesign, Ionicons } from '@expo/vector-icons';
 import type { Event } from '../shared/shared'; 
 
 
@@ -17,8 +18,11 @@ interface EventCardProps {
 
 export default function EventCard({ event, onTap, variant = 'card' }: EventCardProps) {
     const navigation = useNavigation();
-    const compatibilityScore = Math.floor(Math.random() * 20) + 80;
+    const compatibilityScore = computeMatchScore(event);
     const memberCount = Math.floor(Math.random() * 20) + 5;
+
+    const [liked, setLiked] = useState(false);
+    const [favorited, setFavorited] = useState(false);
 
     const handleJoinEvent = () => {
         //navigation.navigate('EventLobby', { eventId: event.id } as never); Sem tela
@@ -55,25 +59,11 @@ export default function EventCard({ event, onTap, variant = 'card' }: EventCardP
                 {/* Content Overlay */}
                 <View style={[styles.contentOverlay, variant === 'full' && styles.contentOverlayFull]}>
                     <View style={styles.headerRow}>
-                        <Badge
-                            variant="default"
-                            style={{
-                                backgroundColor: getCompatibilityColor(compatibilityScore),
-                                width: 40,
-                                height: 40,
-                                borderRadius: 20,
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                                padding: 0,
-                            }}
-                            textStyle={{
-                                color: 'white',
-                                fontSize: 12,
-                                fontWeight: '700',
-                            }}
-                        >
-                            {compatibilityScore}%
-                        </Badge>
+                        <View style={[styles.scorePill, { backgroundColor: getCompatibilityColor(compatibilityScore) }]}>
+                            <Text style={styles.scorePillText} numberOfLines={1}>
+                                {compatibilityScore}%
+                            </Text>
+                        </View>
                         <Text style={styles.title}>{event.title}</Text>
                     </View>
 
@@ -126,25 +116,35 @@ export default function EventCard({ event, onTap, variant = 'card' }: EventCardP
 
                 {/* Side Actions */}
                 <View style={[styles.sideActions, variant === 'full' && styles.sideActionsFull]}>
-                    {/* <TouchableOpacity style={styles.iconButton}>
-                        <Heart size={20} color="white" />
+                    <TouchableOpacity
+                        activeOpacity={0.85}
+                        onPress={() => setLiked((v) => !v)}
+                        style={[styles.iconButton, liked && styles.iconButtonActive]}
+                    >
+                        <AntDesign name={liked ? 'heart' : 'hearto'} size={26} color={liked ? '#EF4444' : '#FFFFFF'} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconButton}>
-                        <Share2 size={20} color="white" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconButton}>
-                        <Bookmark size={20} color="white" />
-                    </TouchableOpacity> */}
 
-                    <BlurView style={styles.iconButton}>
-                        <Heart size={20} color="white" />
-                    </BlurView>
-                    <BlurView style={styles.iconButton}>
-                        <Share2 size={20} color="white" />
-                    </BlurView>
-                    <BlurView style={styles.iconButton}>
-                        <Bookmark size={20} color="white" />
-                    </BlurView>
+                    <TouchableOpacity
+                        activeOpacity={0.85}
+                        onPress={async () => {
+                            try {
+                                await Share.share({
+                                    message: `${event.title} — ${event.location?.venue ?? ''}`.trim(),
+                                });
+                            } catch {}
+                        }}
+                        style={styles.iconButton}
+                    >
+                        <Ionicons name="share-social-outline" size={26} color="#FFFFFF" />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        activeOpacity={0.85}
+                        onPress={() => setFavorited((v) => !v)}
+                        style={[styles.iconButton, favorited && styles.iconButtonActive]}
+                    >
+                        <Ionicons name={favorited ? 'bookmark' : 'bookmark-outline'} size={26} color={favorited ? '#F2C94C' : '#FFFFFF'} />
+                    </TouchableOpacity>
                 </View>
             </ImageBackground>
         </View>
@@ -198,6 +198,21 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         marginLeft: 12,
         flexShrink: 1,
+    },
+    scorePill: {
+        minWidth: 44,
+        height: 28,
+        paddingHorizontal: 10,
+        borderRadius: 999,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    scorePillText: {
+        color: 'white',
+        fontSize: 12,
+        fontWeight: '800',
+        includeFontPadding: false,
+        textAlignVertical: 'center',
     },
     metaInfo: {
         flexDirection: 'row',
@@ -285,5 +300,9 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.1)',
+    },
+    iconButtonActive: {
+        backgroundColor: 'rgba(255,255,255,0.25)',
+        borderColor: 'rgba(255,255,255,0.3)',
     },
 });

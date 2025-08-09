@@ -9,5 +9,6 @@ export type RootStackParamList = {
   Profile: undefined;
   Terms: undefined;
   Privacy: undefined;
-  EventDetail: { id: number };
+  EventDetail: { id: number; event: import('../shared/shared').Event };
+  EventChat: { id: number };
 };

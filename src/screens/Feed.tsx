@@ -143,7 +143,7 @@ export default function Feed() {
                         data={feedEvents}
                         keyExtractor={(item) => String(item.id)}
                         renderItem={({ item }) => (
-                            <TouchableWithoutFeedback onPress={() => navigation.navigate('EventDetail' as never, { id: item.id } as never)}>
+                            <TouchableWithoutFeedback onPress={() => navigation.navigate('EventDetail' as never, { id: item.id, event: item } as never)}>
                                 <View style={{ height: VIEWPORT_HEIGHT, backgroundColor: '#000' }}>
                                     <EventCard event={item} variant="full" />
                                 </View>

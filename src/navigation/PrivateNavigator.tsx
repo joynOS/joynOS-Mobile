@@ -7,6 +7,7 @@ import SearchScreen from '../screens/Search';
 import MapScreen from '../screens/Map';
 import Profile from '../screens/Profile';
 import EventDetail from '../screens/EventDetail';
+import EventChat from '../screens/EventChat';
 
 import type { RootStackParamList } from './types';
 
@@ -24,6 +25,7 @@ export const PrivateNavigator = () => {
       <Stack.Screen name="Map" component={MapScreen} />
       <Stack.Screen name="Profile" component={Profile} />
       <Stack.Screen name="EventDetail" component={EventDetail} />
+      <Stack.Screen name="EventChat" component={EventChat} />
     </Stack.Navigator>
   );
 };

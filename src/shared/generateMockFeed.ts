@@ -78,7 +78,6 @@ export function generateMockEvents(count: number, startId = 1000): Event[] {
     );
 
     const imageSeed = 1492684223066 + id;
-    console.log(`https://picsum.photos/800/1200?random=${imageSeed}`);
     events.push({
       id,
       title: randomTitle(category),
