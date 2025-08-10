@@ -9,8 +9,7 @@ import LiveIntentCapture from '../components/LiveIntentCapture';
 import Spinner from '../components/Spinner';
 import { Filter, Plus, Search, User } from 'lucide-react-native'; 
 import { LinearGradient } from 'expo-linear-gradient';
-import { useGetDiscoverFeedQuery } from '../shared/eventSlice';
-import { generateMockEvents } from '../shared/generateMockFeed';
+import { eventsService } from '../services/events';
 import { RootStackParamList } from '../navigation/types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
@@ -33,15 +32,32 @@ export default function Feed() {
     const [currentIntent, setCurrentIntent] = useState(null);
     const insets = useSafeAreaInsets();
 
-    // Local mock state for TikTok-like feed
-    const [feedEvents, setFeedEvents] = useState(generateMockEvents(6));
+    const [feedEvents, setFeedEvents] = useState<any[]>([]);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-    // Keep existing API hook (can be integrated later)
-    const { data: events, isLoading } = useGetDiscoverFeedQuery({});
+    const [discovery, setDiscovery] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [cursor, setCursor] = useState<string | null>(null);
 
-    useEffect(() => {}, []);
+    useEffect(() => {
+        (async () => {
+            try {
+                const rec = await eventsService.recommendations();
+                setDiscovery(rec.items);
+                setCursor(rec.nextCursor);
+                const detailCards = await Promise.all(
+                    rec.items.slice(0, 6).map(async (it) => {
+                        const d = await eventsService.getById(it.eventId);
+                        return d;
+                    })
+                );
+                setFeedEvents(detailCards);
+            } finally {
+                setIsLoading(false);
+            }
+        })();
+    }, []);
 
     const filterTabs = [
         { id: 'you', label: 'Timeline' },
@@ -143,7 +159,7 @@ export default function Feed() {
                         data={feedEvents}
                         keyExtractor={(item) => String(item.id)}
                         renderItem={({ item }) => (
-                            <TouchableWithoutFeedback onPress={() => navigation.navigate('EventDetail' as never, { id: item.id, event: item } as never)}>
+                            <TouchableWithoutFeedback onPress={() => navigation.navigate('EventDetail' as never, { id: String(item.id) } as never)}>
                                 <View style={{ height: VIEWPORT_HEIGHT, backgroundColor: '#000' }}>
                                     <EventCard event={item} variant="full" />
                                 </View>
@@ -159,25 +175,37 @@ export default function Feed() {
                         getItemLayout={(_, index) => ({ length: VIEWPORT_HEIGHT, offset: VIEWPORT_HEIGHT * index, index })}
                         showsVerticalScrollIndicator={false}
                         onEndReachedThreshold={0.6}
-                        onEndReached={() => {
+                        onEndReached={async () => {
                             if (isLoadingMore) return;
                             setIsLoadingMore(true);
-                            setTimeout(() => {
-                                setFeedEvents((prev) => [...prev, ...generateMockEvents(5, prev[prev.length - 1].id + 1)]);
+                            try {
+                                const rec = await eventsService.recommendations(cursor ? { cursor } : undefined);
+                                setCursor(rec.nextCursor);
+                                const detailCards = await Promise.all(
+                                    rec.items.slice(0, 5).map(async (it) => eventsService.getById(it.eventId))
+                                );
+                                setFeedEvents((prev) => [...prev, ...detailCards]);
+                            } finally {
                                 setIsLoadingMore(false);
-                            }, 600);
+                            }
                         }}
                         refreshControl={(
                             <RefreshControl
                                 tintColor="#00C48C"
                                 refreshing={isRefreshing}
-                                onRefresh={() => {
+                                onRefresh={async () => {
                                     setIsRefreshing(true);
-                                    setTimeout(() => {
-                                        // Simulate a refresh with a new leading set
-                                        setFeedEvents(generateMockEvents(6, Math.floor(Math.random() * 1000) + 2000));
+                                    try {
+                                        const rec = await eventsService.recommendations();
+                                        setDiscovery(rec.items);
+                                        setCursor(rec.nextCursor);
+                                        const detailCards = await Promise.all(
+                                            rec.items.slice(0, 6).map(async (it) => eventsService.getById(it.eventId))
+                                        );
+                                        setFeedEvents(detailCards);
+                                    } finally {
                                         setIsRefreshing(false);
-                                    }, 700);
+                                    }
                                 }}
                             />
                         )}
@@ -200,7 +228,7 @@ export default function Feed() {
                             showsVerticalScrollIndicator={false}
                             //inverted={Platform.OS !== 'web'}
                         >
-                            {events && events.length > 0 ? (
+                            {discovery && discovery.length > 0 ? (
                                 <>
                                     {/* Loading spinner top */}
                                     <View style={styles.discoveryLoading}>
@@ -209,7 +237,7 @@ export default function Feed() {
 
                                     {/* Grid */}
                                     <View style={styles.grid}>
-                                        {events.map((event, index) => {
+                                        {discovery.map((event, index) => {
                                             const vibeScore = Math.min(
                                                 95,
                                                 Math.max(
@@ -233,7 +261,7 @@ export default function Feed() {
                                             return (
                                                 <TouchableOpacity
                                                     key={event.id}
-                                                    onPress={() => navigation.navigate(`/event/${event.id}` as never)}
+                                                    onPress={() => navigation.navigate('EventDetail' as never, { id: String(event.eventId || event.id) } as never)}
                                                     style={styles.gridItem}
                                                     activeOpacity={0.8}
                                                 >
@@ -266,17 +294,10 @@ export default function Feed() {
                                                         </View>
 
                                                         <View style={styles.gridItemBottom}>
-                                                            {event.category && (
+                                                            {event.tags && (
                                                                 <View style={styles.categoryBadge}>
                                                                     <Text style={styles.categoryBadgeText}>
-                                                                        {event.category === 'Music' && '🎵 Music'}
-                                                                        {event.category === 'Food & Drink' && '🍽️ Food'}
-                                                                        {event.category === 'Nightlife' && '🌙 Nightlife'}
-                                                                        {event.category === 'Arts & Culture' && '🎨 Arts'}
-                                                                        {event.category === 'Sports & Fitness' && '🏃‍♂️ Fitness'}
-                                                                        {event.category === 'Outdoor' && '🌲 Outdoor'}
-                                                                        {event.category === 'Social' && '👥 Social'}
-                                                                        {event.category === 'Networking' && '🤝 Network'}
+                                                                        {event.tags.slice(0,1).join(', ')}
                                                                     </Text>
                                                                 </View>
                                                             )}
@@ -287,13 +308,13 @@ export default function Feed() {
                                                             >
                                                                 {event.title}
                                                             </Text>
-                                                            {event.location?.venue && (
+                                                            {event.venue && (
                                                                 <Text
                                                                     style={styles.eventVenue}
                                                                     numberOfLines={1}
                                                                     ellipsizeMode="tail"
                                                                 >
-                                                                    {event.location.venue}
+                                                                    {event.venue}
                                                                 </Text>
                                                             )}
                                                         </View>

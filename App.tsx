@@ -9,7 +9,7 @@ import { PublicNavigator } from './src/navigation/PublicNavigator';
 import { PrivateNavigator } from './src/navigation/PrivateNavigator';
 
 const AppContent = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, onboardingRequired } = useAuth();
 
   if (loading) {
     return (
@@ -21,7 +21,7 @@ const AppContent = () => {
 
   return (
     <NavigationContainer>
-      {user ? <PrivateNavigator /> : <PublicNavigator />}
+      {user ? (onboardingRequired ? <PublicNavigator /> : <PrivateNavigator />) : <PublicNavigator />}
     </NavigationContainer>
   );
 };

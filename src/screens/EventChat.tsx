@@ -2,20 +2,31 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, StatusBar } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import type { RootStackParamList } from '../navigation/types';
+import { eventsService } from '../services/events';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function EventChat() {
   const navigation = useNavigation();
-  const route = useRoute<RouteProp<RootStackParamList, 'EventDetail'>>();
+  const route = useRoute<RouteProp<RootStackParamList, 'EventChat'>>();
   const { id } = route.params;
 
-  const [messages, setMessages] = useState<{ id: string; text: string; from: 'me' | 'other' }[]>([
-    { id: '1', text: 'Welcome to the lobby! Say hi 👋', from: 'other' },
-  ]);
+  const [messages, setMessages] = useState<{ id: string; text: string; from: 'me' | 'other' }[]>([]);
   const [input, setInput] = useState('');
+  const { user } = useAuth();
 
-  const send = () => {
+  React.useEffect(() => {
+    (async () => {
+      const list = await eventsService.chatList(id, { limit: 50 });
+      setMessages(
+        list.items.map((m) => ({ id: m.id, text: m.text, from: m.userId && user && m.userId === user.id ? 'me' : 'other' }))
+      );
+    })();
+  }, [id, user?.id]);
+
+  const send = async () => {
     if (!input.trim()) return;
-    setMessages((prev) => [...prev, { id: `${Date.now()}`, text: input.trim(), from: 'me' }]);
+    const sent = await eventsService.chatSend(id, input.trim());
+    setMessages((prev) => [...prev, { id: sent.id, text: sent.text, from: 'me' }]);
     setInput('');
   };
 

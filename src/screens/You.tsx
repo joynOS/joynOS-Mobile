@@ -11,7 +11,7 @@ import {
     User, Filter, CheckCircle, AlertCircle, Timer, Grid3X3, UserCheck, ArrowUpDown, CalendarDays, Activity, Search, X
 } from 'lucide-react-native'; // Adjusted import for React Native
 
-import { upcomingEvents, savedEvents, likedEvents } from '../shared/mockEvents';
+import { eventsService } from '../services/events';
 import { RootStackParamList } from '../navigation/types';
 import { useAssets } from 'expo-asset';
 import EventImage from '../components/EventImage';
@@ -47,7 +47,7 @@ export default function You() {
         return `${Math.floor(diff / (1000 * 60))}m`;
     };
 
-    const getEventStatus = (event: typeof upcomingEvents[0]) => {
+    const getEventStatus = (event: any) => {
         const now = new Date();
         const eventStart = new Date(event.startTime);
         const eventEnd = new Date(event.endTime);
@@ -63,7 +63,7 @@ export default function You() {
         }
     };
 
-    const formatEventTime = (startTime: Date) => {
+    const formatEventTime = (startTime: any) => {
         return new Date(startTime).toLocaleDateString('en-US', {
             weekday: 'short',
             month: 'short',
@@ -84,31 +84,7 @@ export default function You() {
         return `${Math.floor(hours / 24)}d ago`;
     };
 
-    // Sort events by date - past events first (most recent past), then future events
-    const sortedUpcoming = [...upcomingEvents].sort((a, b) => {
-        const now = new Date();
-        const aTime = new Date(a.startTime);
-        const bTime = new Date(b.startTime);
-
-        const aIsPast = aTime < now;
-        const bIsPast = bTime < now;
-
-        // Both past: sort by most recent first (descending)
-        if (aIsPast && bIsPast) {
-            return bTime.getTime() - aTime.getTime();
-        }
-
-        // Both future: sort by soonest first (ascending)
-        if (!aIsPast && !bIsPast) {
-            return aTime.getTime() - bTime.getTime();
-        }
-
-        // Mixed: past events first
-        if (aIsPast && !bIsPast) return -1;
-        if (!aIsPast && bIsPast) return 1;
-
-        return 0;
-    });
+    const sortedUpcoming: any[] = [];
 
     // Helper function to get time category for section headers
     const getTimeCategory = (eventTime: Date) => {
@@ -129,27 +105,27 @@ export default function You() {
         }
     };
 
-    const groupedEvents = sortedUpcoming.reduce((groups, event) => {
+    const groupedEvents = sortedUpcoming.reduce((groups: Record<string, any[]>, event: any) => {
         const category = getTimeCategory(new Date(event.startTime));
         if (!groups[category]) groups[category] = [];
         groups[category].push(event);
         return groups;
-    }, {} as Record<string, typeof upcomingEvents>);
+    }, {} as Record<string, any[]>);
 
     const getFilteredEvents = () => {
         let events;
         switch (activeFilter) {
             case 'all':
-                events = [...sortedUpcoming, ...savedEvents, ...likedEvents];
+                events = [...sortedUpcoming];
                 break;
             case 'joined':
                 events = sortedUpcoming;
                 break;
             case 'saved':
-                events = savedEvents;
+                events = [];
                 break;
             case 'liked':
-                events = likedEvents;
+                events = [];
                 break;
             default:
                 events = sortedUpcoming;

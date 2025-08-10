@@ -3,14 +3,14 @@ import { View, Text, Image, ImageBackground, StyleSheet, TouchableOpacity, Share
 import { useNavigation } from '@react-navigation/native';
 import Button from '../components/Button';
 import { Badge } from '../components/Badge';
-import { computeMatchScore } from '../shared/match';
+import type { EventDetail as ApiEvent } from '../types/api';
 import { Clock, MapPin } from 'lucide-react-native';
 import { AntDesign, Ionicons } from '@expo/vector-icons';
 import type { Event } from '../shared/shared'; 
 
 
 interface EventCardProps {
-    event: Event;
+    event: any | ApiEvent | Event;
     isActive?: boolean;
     onTap?: () => void;
     variant?: 'card' | 'full';
@@ -18,7 +18,8 @@ interface EventCardProps {
 
 export default function EventCard({ event, onTap, variant = 'card' }: EventCardProps) {
     const navigation = useNavigation();
-    const compatibilityScore = computeMatchScore(event);
+    const tagCount = Array.isArray((event as any).tags) ? (event as any).tags.length : 0;
+    const compatibilityScore = Math.max(70, Math.min(95, Math.floor(80 + tagCount * 3)));
     const memberCount = Math.floor(Math.random() * 20) + 5;
 
     const [liked, setLiked] = useState(false);
@@ -29,8 +30,9 @@ export default function EventCard({ event, onTap, variant = 'card' }: EventCardP
         console.log('Join event clicked:', event.id); 
     };
 
-    const formatEventTime = (date: Date) => {
-        return new Date(date).toLocaleString('en-US', {
+    const formatEventTime = (input: any) => {
+        const d = new Date(input);
+        return d.toLocaleString('en-US', {
             weekday: 'short',
             hour: 'numeric',
             minute: '2-digit',
@@ -44,7 +46,7 @@ export default function EventCard({ event, onTap, variant = 'card' }: EventCardP
         return '#3b82f6';
     };
 
-    const imageUri = event.imageUrl || `https://source.unsplash.com/collection/190727/800x1200?sig=${event.id}`;
+    const imageUri = (event as any).imageUrl || `https://source.unsplash.com/collection/190727/800x1200?sig=${(event as any).id}`;
 
     return (
         <View style={[styles.cardContainer, variant === 'full' && styles.cardContainerFull]}>
@@ -70,18 +72,18 @@ export default function EventCard({ event, onTap, variant = 'card' }: EventCardP
                     <View style={styles.metaInfo}>
                         <View style={styles.metaItem}>
                             <Clock size={16} color="white" />
-                            <Text style={styles.metaText}>{formatEventTime(event.startTime)}</Text>
+                            <Text style={styles.metaText}>{formatEventTime((event as any).startTime)}</Text>
                         </View>
                         <View style={styles.metaItem}>
                             <MapPin size={16} color="white" />
                             <Text style={styles.metaText}>
-                                {event.location?.venue || 'TBD'}
+                                {(event as any).venue || (event as any).location?.venue || 'TBD'}
                             </Text>
                         </View>
                     </View>
 
                     <Text numberOfLines={2} style={styles.description}>
-                        {event.description}
+                        {(event as any).description || ''}
                     </Text>
 
                     {/* Members */}

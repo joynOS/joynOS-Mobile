@@ -3,7 +3,7 @@ import { View, Text, ImageBackground, TouchableOpacity, StyleSheet, FlatList, Im
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import QuizHeader from '../components/QuizHeader';
 import Button from '../components/Button';
-import { QUIZ_QUESTIONS } from '../utils';
+import { quizService } from '../services/quiz';
 
 import { RootStackParamList } from '../navigation/types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -15,21 +15,32 @@ export default function PersonalityQuiz() {
     const navigation = useNavigation<PersonalityQuizNavigationProp>();
     const route = useRoute<PersonalityQuizRouteProp>();
     const [currentQuestion, setCurrentQuestion] = useState(0);
-    const [answers, setAnswers] = useState<Record<number, string>>({});
+    const [answers, setAnswers] = useState<Record<string, string>>({});
+    const [quiz, setQuiz] = React.useState<any | null>(null);
     
     const phone = route.params?.phone;
 
-    const question = QUIZ_QUESTIONS[currentQuestion];
-    const selectedAnswer = answers[question.id];
+    React.useEffect(() => {
+        (async () => {
+            const q = await quizService.getActive();
+            setQuiz(q);
+        })();
+    }, []);
+    const question = quiz?.questions?.[currentQuestion];
+    const selectedAnswer = question ? answers[question.id] : undefined;
 
     const handleAnswer = (answerId: string) => {
+        if (!question) return;
         setAnswers(prev => ({ ...prev, [question.id]: answerId }));
     };
 
-    const handleNext = () => {
-        if (currentQuestion < QUIZ_QUESTIONS.length - 1) {
+    const handleNext = async () => {
+        if (!quiz) return;
+        if (currentQuestion < quiz.questions.length - 1) {
             setCurrentQuestion(prev => prev + 1);
         } else {
+            const payload = quiz.questions.map((q: any) => ({ questionId: q.id, answerKey: answers[q.id] }));
+            await quizService.submitAnswers(quiz.id, payload);
             navigation.navigate('InterestSelector', { phone });
         }
     };
@@ -45,11 +56,11 @@ export default function PersonalityQuiz() {
     return (
         <View style={styles.container}>
             {/* Quiz header */}
-            <QuizHeader onBack={handleBack} current={currentQuestion} total={QUIZ_QUESTIONS.length} />
+            <QuizHeader onBack={handleBack} current={currentQuestion} total={quiz?.questions?.length || 0} />
 
             {/* Question image */}
             <ImageBackground
-                source={{ uri: question.image }}
+                source={{ uri: question?.imageUrl || 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1200' }}
                 style={styles.image}
                 imageStyle={{ borderRadius: 16 }}
             >
@@ -58,26 +69,26 @@ export default function PersonalityQuiz() {
 
             {/* Question */}
             <View style={styles.questionBox}>
-                <Text style={styles.questionText}>{question.question}</Text>
+                <Text style={styles.questionText}>{question?.question || ''}</Text>
             </View>
 
             {/* Answers */}
             <ScrollView style={{ flex: 1, paddingHorizontal: 20 }}>
-                {question.answers.map(answer => (
+                {question?.answers?.map((answer: any) => (
                     <TouchableOpacity
                         key={answer.id}
-                        onPress={() => handleAnswer(answer.id)}
+                        onPress={() => handleAnswer(answer.key)}
                         style={[
                             styles.answerButton,
-                            selectedAnswer === answer.id && styles.selectedAnswer,
+                            selectedAnswer === answer.key && styles.selectedAnswer,
                         ]}
                     >
                         <View style={styles.radio}>
-                            {selectedAnswer === answer.id && <View style={styles.radioSelected} />}
+                            {selectedAnswer === answer.key && <View style={styles.radioSelected} />}
                         </View>
                         <Text style={[
                             styles.answerText,
-                            selectedAnswer === answer.id && styles.answerTextSelected
+                            selectedAnswer === answer.key && styles.answerTextSelected
                         ]}>
                             {answer.text}
                         </Text>
@@ -90,7 +101,7 @@ export default function PersonalityQuiz() {
                 <Button
                     onPress={handleNext}
                     disabled={!selectedAnswer}
-                    title={currentQuestion < QUIZ_QUESTIONS.length - 1 ? 'Continue' : 'Complete Quiz'}
+                    title={quiz && currentQuestion < (quiz.questions.length - 1) ? 'Continue' : 'Complete Quiz'}
                 />
             </View>
         </View>
