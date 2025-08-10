@@ -26,6 +26,24 @@ export const eventsService = {
     const { data } = await http.get<EventDetail>(`/events/${id}`);
     return data;
   },
+  async browse(params?: {
+    from?: string;
+    to?: string;
+    tags?: string[];
+    take?: number;
+  }) {
+    const query: any = {};
+    if (params?.from) query.from = params.from;
+    if (params?.to) query.to = params.to;
+    if (params?.tags && params.tags.length > 0)
+      query.tags = params.tags.join(",");
+    if (params?.take) query.take = params.take;
+    const { data } = await http.get<{
+      items: any[];
+      nextCursor: string | null;
+    }>(`/events/browse`, { params: query });
+    return data;
+  },
   async getPlans(id: string) {
     const { data } = await http.get<EventDetail["plans"]>(
       `/events/${id}/plans`
