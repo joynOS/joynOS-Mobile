@@ -117,11 +117,9 @@ export default function Feed() {
               <TouchableOpacity
                 key={tab.id}
                 onPress={() => {
-                  if (tab.id === "you") {
-                    navigation.navigate("You");
-                  } else {
-                    setActiveFilter(tab.id);
-                  }
+                  if (tab.id === "you") navigation.navigate("You");
+                  else if (tab.id === "discovery") navigation.navigate("Discovery" as never);
+                  else setActiveFilter(tab.id);
                 }}
                 style={[
                   styles.filterPill,

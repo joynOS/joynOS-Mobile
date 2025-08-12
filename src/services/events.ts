@@ -14,12 +14,10 @@ export const eventsService = {
     radiusMiles?: number;
     cursor?: string;
   }) {
-    console.log("params", params);
     const { data } = await http.get<RecommendationsResponse>(
       "/events/recommendations",
       { params }
     );
-    console.log("data", data);
     return data;
   },
   async getById(id: string) {
@@ -38,10 +36,8 @@ export const eventsService = {
     if (params?.tags && params.tags.length > 0)
       query.tags = params.tags.join(",");
     if (params?.take) query.take = params.take;
-    const { data } = await http.get<{
-      items: any[];
-      nextCursor: string | null;
-    }>(`/events/browse`, { params: query });
+    const { data } = await http.get<any[]>(`/events/browse`, { params: query });
+
     return data;
   },
   async getPlans(id: string) {

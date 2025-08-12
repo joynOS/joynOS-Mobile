@@ -185,16 +185,10 @@ export default function You() {
                             <TouchableOpacity style={styles.navButtonActive}>
                                 <Text style={styles.navButtonTextActive}>Timeline</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity
-                                onPress={() => navigation.navigate('Feed')}
-                                style={styles.navButton}
-                            >
+                            <TouchableOpacity onPress={() => navigation.navigate('Feed')} style={styles.navButton}>
                                 <Text style={styles.navButtonText}>Feed</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity
-                                //onPress={() => navigation.navigate('Feed', { view: 'discovery' })} // Assuming Feed handles discovery view
-                                style={styles.navButton}
-                            >
+                            <TouchableOpacity onPress={() => navigation.navigate('Discovery' as never)} style={styles.navButton}>
                                 <Text style={styles.navButtonText}>Discovery</Text>
                             </TouchableOpacity>
                         </View>

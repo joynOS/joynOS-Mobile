@@ -4,6 +4,7 @@ export type RootStackParamList = {
   InterestSelector: { phone?: string };
   Feed: undefined;
   You: undefined;
+  Discovery: undefined;
   Search: undefined;
   Map: undefined;
   Profile: undefined;
