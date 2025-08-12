@@ -83,7 +83,10 @@ export const eventsService = {
     const { data } = await http.post(
       `/events/${id}/booking/confirm`,
       bookingRef ? { bookingRef } : {}
-    );
+    ).catch((err) => {
+      console.log("bookingConfirm error: ", err);
+      throw err;
+    });
     return data;
   },
   async chatList(id: string, params?: { cursor?: string; limit?: number }) {

@@ -15,13 +15,7 @@ import {
 import * as WebBrowser from "expo-web-browser";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RouteProp, useRoute, useNavigation } from "@react-navigation/native";
-import {
-  ArrowLeft,
-  Clock,
-  Users,
-  Bookmark,
-  MessageCircle,
-} from "lucide-react-native";
+import { ArrowLeft, Clock, Bookmark, MessageCircle } from "lucide-react-native";
 import type { RootStackParamList } from "../navigation/types";
 import { eventsService } from "../services/events";
 import type { EventDetail as EventDetailType } from "../types/api";
@@ -71,7 +65,7 @@ export default function EventDetail() {
         try {
           const bookingInfo = await eventsService.bookingInfo(id);
           setBooking(bookingInfo);
-          if (bookingInfo && Object.keys(bookingInfo).length > 0) {
+          if (bookingInfo && bookingInfo.isBooked) {
             setCurrentState("BOOKED");
           } else {
             setCurrentState("VOTING_CLOSED");
@@ -88,10 +82,9 @@ export default function EventDetail() {
   const loadChat = async () => {
     try {
       const chatData = await eventsService.chatList(id, { limit: 50 });
-      console.log("chatData: ", chatData);
       setMessages(chatData.items || []);
     } catch (error) {
-      console.error("Failed to load chat:", error);
+      setMessages([]);
     }
   };
 
@@ -143,10 +136,11 @@ export default function EventDetail() {
   };
 
   const handleVote = async (planId: string) => {
+    if (selectedPlanId) return;
+
     try {
       await eventsService.votePlan(id, planId);
       setSelectedPlanId(planId);
-      // Refresh plans to get updated vote counts
       const updatedPlans = await eventsService.getPlans(id);
       setPlans(updatedPlans);
     } catch (error) {
@@ -162,7 +156,7 @@ export default function EventDetail() {
 
   const handleBookingConfirm = async () => {
     try {
-      await eventsService.bookingConfirm(id, "123");
+      await eventsService.bookingConfirm(id, "user-booking-ref-123");
       setCurrentState("BOOKED");
       loadEventData();
     } catch (error) {
@@ -416,6 +410,7 @@ export default function EventDetail() {
               <TouchableOpacity
                 key={plan.id}
                 onPress={() => handleVote(plan.id)}
+                disabled={!!selectedPlanId}
                 className={`bg-white/5 rounded-lg p-3 mb-3 border ${
                   selectedPlanId === plan.id
                     ? "border-green-500"
@@ -470,7 +465,7 @@ export default function EventDetail() {
           </View>
         )}
 
-        {/* Selected Plan - Voting Closed/Booked */}
+        {/* Selected Plan - Voting Closed */}
         {(currentState === "VOTING_CLOSED" || currentState === "BOOKED") &&
           selectedPlan && (
             <View className="bg-white/5 rounded-xl p-4 mb-4">
@@ -522,11 +517,14 @@ export default function EventDetail() {
           </View>
         )}
 
-        {/* Commit Section - Booked */}
+        {/* Reservation Status - Booked */}
         {currentState === "BOOKED" && (
           <View className="bg-white/5 rounded-xl p-4 mb-4">
             <Text className="text-green-400 text-base font-semibold mb-1">
               ✓ Reservation: All set for tonight
+            </Text>
+            <Text className="text-white/60 text-sm">
+              Your booking has been confirmed
             </Text>
           </View>
         )}
@@ -547,10 +545,12 @@ export default function EventDetail() {
                   </Text>
                 ) : (
                   messages.map((message, index) => (
-                    <View key={index} className="mb-2">
+                    <View key={message.id || index} className="mb-2">
                       <Text className="text-white/80 text-sm">
                         <Text className="font-semibold">
-                          {message.userId ? "User" : "System"}
+                          {message.isMe
+                            ? "You"
+                            : message.user?.name || "System"}
                         </Text>
                         {": "}
                         {message.text}

@@ -133,6 +133,7 @@ export type JoinLeaveResponse = {
 export type BookingInfo = {
   externalBookingUrl: string | null;
   selectedPlan: EventPlan | null;
+  isBooked: boolean;
 };
 
 export type ChatItem = {

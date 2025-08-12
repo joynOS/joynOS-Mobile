@@ -101,7 +101,9 @@ export default function You() {
             maxAttendees:
               typeof ev.maxAttendees === "number" ? ev.maxAttendees : undefined,
             status,
-            vibeScore: ev.vibeMatchScoreEvent || Math.min(95, Math.max(75, 80 + vibeBase * 2)),
+            vibeScore:
+              ev.vibeMatchScoreEvent ||
+              Math.min(95, Math.max(75, 80 + vibeBase * 2)),
             vibeMatchScoreWithOtherUsers: ev.vibeMatchScoreWithOtherUsers,
             lastMessage: undefined,
             unreadCount: 0,
@@ -119,9 +121,14 @@ export default function You() {
     })();
   }, []);
 
-  const getTimeUntilEvent = (startTime: Date) => {
+  const getTimeUntilEvent = (startTime: Date | string) => {
+    if (!startTime) return "No time";
+
+    const startDate = new Date(startTime);
+    if (isNaN(startDate.getTime())) return "Invalid date";
+
     const now = new Date();
-    const diff = startTime.getTime() - now.getTime();
+    const diff = startDate.getTime() - now.getTime();
 
     if (diff < 0) return "Past event";
 
@@ -421,13 +428,13 @@ export default function You() {
                                           style={styles.eventTitleText}
                                           numberOfLines={1}
                                         >
-                                          {event.title || 'Untitled Event'}
+                                          {event.title || "Untitled Event"}
                                         </Text>
                                         <Text
                                           style={styles.eventVenueText}
                                           numberOfLines={1}
                                         >
-                                          {event.venue || 'Location TBD'}
+                                          {event.venue || "Location TBD"}
                                         </Text>
                                       </View>
 
@@ -460,12 +467,17 @@ export default function You() {
                                             {event.vibeScore}%
                                           </Text>
                                         </View>
-                                        
+
                                         {/* Vibe Match with Others */}
                                         {event.vibeMatchScoreWithOtherUsers && (
                                           <View style={styles.vibeMatchBadge}>
-                                            <Text style={styles.vibeMatchBadgeText}>
-                                              {event.vibeMatchScoreWithOtherUsers}% match
+                                            <Text
+                                              style={styles.vibeMatchBadgeText}
+                                            >
+                                              {
+                                                event.vibeMatchScoreWithOtherUsers
+                                              }
+                                              % match
                                             </Text>
                                           </View>
                                         )}
@@ -515,7 +527,8 @@ export default function You() {
                                               style={styles.lastMessageText}
                                               numberOfLines={1}
                                             >
-                                              {event.lastMessage || 'No messages yet'}
+                                              {event.lastMessage ||
+                                                "No messages yet"}
                                             </Text>
                                             {(event.unreadCount ?? 0) > 0 && (
                                               <View
@@ -626,13 +639,13 @@ export default function You() {
                               style={styles.eventTitleText}
                               numberOfLines={1}
                             >
-                              {event.title || 'Untitled Event'}
+                              {event.title || "Untitled Event"}
                             </Text>
                             <Text
                               style={styles.eventVenueText}
                               numberOfLines={1}
                             >
-                              {event.venue || 'Location TBD'}
+                              {event.venue || "Location TBD"}
                             </Text>
                           </View>
 
@@ -1422,7 +1435,7 @@ const styles = StyleSheet.create({
   bgBlack60: { backgroundColor: "rgba(0,0,0,0.6)" },
   bgJoynYellow90: { backgroundColor: "rgba(242, 201, 76, 0.9)" },
   bgJoynPurple90: { backgroundColor: "rgba(155, 81, 224, 0.9)" },
-  
+
   vibeMatchBadge: {
     backgroundColor: "rgba(0,0,0,0.4)",
     borderRadius: 999,
