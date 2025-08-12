@@ -421,13 +421,13 @@ export default function You() {
                                           style={styles.eventTitleText}
                                           numberOfLines={1}
                                         >
-                                          {event.title}
+                                          {event.title || 'Untitled Event'}
                                         </Text>
                                         <Text
                                           style={styles.eventVenueText}
                                           numberOfLines={1}
                                         >
-                                          {event.venue}
+                                          {event.venue || 'Location TBD'}
                                         </Text>
                                       </View>
 
@@ -515,7 +515,7 @@ export default function You() {
                                               style={styles.lastMessageText}
                                               numberOfLines={1}
                                             >
-                                              {event.lastMessage}
+                                              {event.lastMessage || 'No messages yet'}
                                             </Text>
                                             {(event.unreadCount ?? 0) > 0 && (
                                               <View
@@ -626,13 +626,13 @@ export default function You() {
                               style={styles.eventTitleText}
                               numberOfLines={1}
                             >
-                              {event.title}
+                              {event.title || 'Untitled Event'}
                             </Text>
                             <Text
                               style={styles.eventVenueText}
                               numberOfLines={1}
                             >
-                              {event.venue}
+                              {event.venue || 'Location TBD'}
                             </Text>
                           </View>
 
@@ -859,7 +859,7 @@ export default function You() {
               <Text style={styles.searchResultsText}>
                 {filteredEvents.length} event
                 {filteredEvents.length !== 1 ? "s" : ""} found
-                {searchQuery && ` for "${searchQuery}"`}
+                {searchQuery ? ` for "${searchQuery}"` : ""}
               </Text>
             </View>
           )}

@@ -113,7 +113,7 @@ export default function Profile() {
           </View>
         </View>
         <Text style={styles.userName}>
-          {user?.displayName || user?.email || 'Joyn OS User'}
+          {user?.name || user?.email || 'Joyn OS User'}
         </Text>
         {user?.email && (
           <Text style={styles.userEmail}>{user.email}</Text>
