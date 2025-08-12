@@ -17,6 +17,7 @@ type EventLike = {
   venue?: string | null;
   aiNormalized?: { categories?: string[]; tags?: string[] } | null;
   tags?: string[] | null;
+  vibeMatchScoreEvent?: number;
 };
 
 type Props = {
@@ -55,18 +56,11 @@ const getCategory = (
   return { label: ev.aiNormalized?.categories?.[0] ?? raw, emoji: "✨" } as any;
 };
 
-const getVibeScore = (ev: any) => {
-  if (ev.vibeMatchScoreEvent) return ev.vibeMatchScoreEvent;
-  const base = (ev.tags?.length ?? 0) + (ev.aiNormalized?.tags?.length ?? 0);
-  const raw = 80 + base * 3;
-  return Math.max(85, Math.min(95, Math.floor(raw)));
-};
 
 const EventDiscoverCard: React.FC<Props> = ({ event, onPress, style }) => {
-  console.log("event: ", JSON.stringify(event, null, 2));
   const dateStr = getDateStr(event.startTime ?? undefined);
   const cat = getCategory(event);
-  const vibe = getVibeScore(event);
+  const vibe = event?.vibeMatchScoreEvent || 0;
   const title = event.title || "Untitled Event";
   const venue = event.venue || "";
   const image =

@@ -1,542 +1,677 @@
-import React, { useState } from 'react';
-import { View, Text, ImageBackground, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, StatusBar, Platform, TextInput, KeyboardAvoidingView } from 'react-native';
-import * as WebBrowser from 'expo-web-browser';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
-import type { RootStackParamList } from '../navigation/types';
-import { eventsService } from '../services/events';
-import type { EventDetail as EventDetailType } from '../types/api';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  TouchableOpacity,
+  StatusBar,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
+} from "react-native";
+import * as WebBrowser from "expo-web-browser";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { RouteProp, useRoute, useNavigation } from "@react-navigation/native";
+import {
+  ArrowLeft,
+  Clock,
+  Users,
+  Bookmark,
+  MessageCircle,
+} from "lucide-react-native";
+import type { RootStackParamList } from "../navigation/types";
+import { eventsService } from "../services/events";
+import type { EventDetail as EventDetailType } from "../types/api";
+
+type EventState =
+  | "PRE_JOIN"
+  | "VOTING_OPEN"
+  | "VOTING_CLOSED"
+  | "BOOKED"
+  | "COMMITTED"
+  | "CANT_MAKE_IT";
 
 export default function EventDetail() {
-  const route = useRoute<RouteProp<RootStackParamList, 'EventDetail'>>();
+  const route = useRoute<RouteProp<RootStackParamList, "EventDetail">>();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { id } = route.params;
-  const [e, setE] = React.useState<EventDetailType | null>(null);
-  const [plans, setPlans] = React.useState<EventDetailType['plans']>([]);
-  const [booking, setBooking] = React.useState<{ externalBookingUrl: string | null; selectedPlan: EventDetailType['plans'][number] | null } | null>(null);
-  const [isBookingConfirmed, setIsBookingConfirmed] = React.useState(false);
-  React.useEffect(() => {
-    (async () => {
-      const data = await eventsService.getById(id);
-      setE(data);
-      setPlans(data.plans || []);
-      // Prefer backend flag for membership state
-      setJoined(!!data.isMember);
-      try {
-        const b = await eventsService.bookingInfo(id);
-        setBooking(b);
-      } catch {}
-    })();
-  }, [id]);
-  const title = e?.title ?? '';
-  const imageUrl = e?.imageUrl || `https://source.unsplash.com/collection/190727/1200x1600?sig=${id}`;
-  const vibeScore = e?.vibeMatchScoreEvent || (e ? Math.max(70, Math.min(95, Math.floor(80 + (e.tags?.length || 0) * 3))) : 0);
-  const vibeText = 'High-energy match based on timing, interests, and location radius.';
-  const tags = e?.tags || [];
-  const attendees = e?.participants || [];
-  const attendeeCount = e?.interestedCount || 0;
 
-  const [joined, setJoined] = useState(false);
-  const [messages, setMessages] = useState<{ id: string; text: string; from: 'me' | 'other' }[]>([]);
-  const [input, setInput] = useState('');
-  const [voteCountdown, setVoteCountdown] = useState<string | null>(null);
+  const [event, setEvent] = useState<EventDetailType | null>(null);
+  const [plans, setPlans] = useState<EventDetailType["plans"]>([]);
+  const [currentState, setCurrentState] = useState<EventState>("PRE_JOIN");
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [voteCountdown, setVoteCountdown] = useState<string>("");
+  const [messages, setMessages] = useState<any[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [booking, setBooking] = useState<any>(null);
 
-  React.useEffect(() => {
-    if (!e?.votingEndsAt || e.votingState !== 'OPEN') { setVoteCountdown(null); return; }
-    const end = new Date(e.votingEndsAt).getTime();
-    const timer = setInterval(() => {
-      const now = Date.now();
-      const diff = Math.max(0, Math.floor((end - now) / 1000));
-      const mm = String(Math.floor(diff / 60)).padStart(2, '0');
-      const ss = String(diff % 60).padStart(2, '0');
-      setVoteCountdown(`${mm}:${ss}`);
-      if (diff <= 0) {
-        clearInterval(timer);
-      }
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [e?.votingEndsAt, e?.votingState]);
+  // Load event data
+  useEffect(() => {
+    loadEventData();
+  }, [id]);
 
-  React.useEffect(() => {
-    let plansTimer: any;
-    let eventTimer: any;
-    let chatTimer: any;
-    if (joined) {
-      chatTimer = setInterval(async () => {
-        const list = await eventsService.chatList(id, { limit: 30 });
-        setMessages(list.items.map((m) => ({ id: m.id, text: m.text, from: 'other' })));
-      }, 5000);
-    }
-    if (e?.votingState === 'OPEN') {
-      plansTimer = setInterval(async () => {
-        const p = await eventsService.getPlans(id);
-        setPlans(p);
-      }, 5000);
-      eventTimer = setInterval(async () => {
-        const data = await eventsService.getById(id);
-        setE(data);
-        if (data.votingState !== 'OPEN') {
-          clearInterval(plansTimer);
-          clearInterval(eventTimer);
-          const b = await eventsService.bookingInfo(id);
-          setBooking(b);
+  const loadEventData = async () => {
+    try {
+      const data = await eventsService.getById(id);
+      setEvent(data);
+      setPlans(data.plans || []);
+      setSelectedPlanId(data.selectedPlanId);
+
+      if (!data.isMember) {
+        setCurrentState("PRE_JOIN");
+      } else if (data.votingState === "OPEN") {
+        setCurrentState("VOTING_OPEN");
+        loadChat();
+      } else if (data.votingState === "CLOSED") {
+        loadChat();
+        try {
+          const bookingInfo = await eventsService.bookingInfo(id);
+          setBooking(bookingInfo);
+          if (bookingInfo && Object.keys(bookingInfo).length > 0) {
+            setCurrentState("BOOKED");
+          } else {
+            setCurrentState("VOTING_CLOSED");
+          }
+        } catch {
+          setCurrentState("VOTING_CLOSED");
         }
-      }, 7000);
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to load event details");
     }
-    return () => {
-      if (plansTimer) clearInterval(plansTimer);
-      if (eventTimer) clearInterval(eventTimer);
-      if (chatTimer) clearInterval(chatTimer);
-    };
-  }, [joined, e?.votingState, id]);
-
-  const seedMessages = () => {
-    setMessages([]);
   };
 
+  const loadChat = async () => {
+    try {
+      const chatData = await eventsService.chatList(id, { limit: 50 });
+      console.log("chatData: ", chatData);
+      setMessages(chatData.items || []);
+    } catch (error) {
+      console.error("Failed to load chat:", error);
+    }
+  };
+
+  // Voting countdown timer
+  useEffect(() => {
+    if (currentState !== "VOTING_OPEN" || !event?.votingEndsAt) return;
+
+    const timer = setInterval(() => {
+      const now = Date.now();
+      const end = new Date(event.votingEndsAt!).getTime();
+      const diff = Math.max(0, Math.floor((end - now) / 1000));
+
+      const minutes = Math.floor(diff / 60);
+      const seconds = diff % 60;
+      setVoteCountdown(
+        `${minutes.toString().padStart(2, "0")}:${seconds
+          .toString()
+          .padStart(2, "0")}`
+      );
+
+      if (diff <= 0) {
+        clearInterval(timer);
+        loadEventData(); // Refresh to get new state
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [currentState, event?.votingEndsAt]);
+
+  // Poll for updates when voting is open
+  useEffect(() => {
+    if (currentState !== "VOTING_OPEN") return;
+
+    const pollTimer = setInterval(() => {
+      loadEventData();
+    }, 10000); // Poll every 10 seconds
+
+    return () => clearInterval(pollTimer);
+  }, [currentState]);
+
+  const handleJoin = async () => {
+    try {
+      await eventsService.join(id);
+      setCurrentState("VOTING_OPEN");
+      loadEventData();
+    } catch (error) {
+      Alert.alert("Error", "Failed to join event");
+    }
+  };
+
+  const handleVote = async (planId: string) => {
+    try {
+      await eventsService.votePlan(id, planId);
+      setSelectedPlanId(planId);
+      // Refresh plans to get updated vote counts
+      const updatedPlans = await eventsService.getPlans(id);
+      setPlans(updatedPlans);
+    } catch (error) {
+      Alert.alert("Error", "Failed to vote");
+    }
+  };
+
+  const handleBooking = async () => {
+    if (booking?.externalBookingUrl) {
+      await WebBrowser.openBrowserAsync(booking.externalBookingUrl);
+    }
+  };
+
+  const handleBookingConfirm = async () => {
+    try {
+      await eventsService.bookingConfirm(id, "123");
+      setCurrentState("BOOKED");
+      loadEventData();
+    } catch (error) {
+      Alert.alert("Error", "Failed to confirm booking");
+    }
+  };
+
+  const handleCommit = async (decision: "IN" | "OUT") => {
+    try {
+      await eventsService.commit(id, decision);
+      setCurrentState(decision === "IN" ? "COMMITTED" : "CANT_MAKE_IT");
+      loadEventData();
+    } catch (error) {
+      Alert.alert("Error", "Failed to commit");
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!chatInput.trim()) return;
+
+    try {
+      await eventsService.chatSend(id, chatInput.trim());
+      setChatInput("");
+      loadChat(); // Refresh chat
+    } catch (error) {
+      Alert.alert("Error", "Failed to send message");
+    }
+  };
+
+  if (!event) {
+    return (
+      <SafeAreaView className="flex-1 bg-black">
+        <StatusBar barStyle="light-content" />
+        <View className="flex-1 justify-center items-center">
+          <Text className="text-white text-lg">Loading...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+  const vibeScore = event.vibeMatchScoreEvent || 0;
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  };
+
+  const selectedPlan = plans.find((p) => p.id === selectedPlanId);
+
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView className="flex-1 bg-black">
       <StatusBar barStyle="light-content" />
-      <ImageBackground source={{ uri: imageUrl }} style={styles.headerImage} imageStyle={styles.headerImageStyle}>
-        <View style={styles.headerOverlay} />
-        <View style={styles.headerContent}>
-          <View style={[styles.scorePill, { backgroundColor: '#00C48C' }]}>
-            <Text numberOfLines={1} style={styles.scorePillText}>{vibeScore}%</Text>
-          </View>
-          <Text style={styles.title}>{title}</Text>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Ionicons name="chevron-back" size={20} color="#fff" />
+
+      {/* Header */}
+      <View className="relative">
+        <Image
+          source={{
+            uri:
+              event.imageUrl ||
+              "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
+          }}
+          className="w-full h-64"
+          resizeMode="cover"
+        />
+        <View className="absolute inset-0 bg-black/40" />
+
+        {/* Header Content */}
+        <View className="absolute top-4 left-4 right-4 flex-row items-start justify-between">
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            className="w-10 h-10 bg-black/50 rounded-full items-center justify-center"
+          >
+            <ArrowLeft size={20} color="white" />
           </TouchableOpacity>
-          <View style={styles.headerChipsRow}>
-            {e?.votingState === 'OPEN' && (
-              <View style={styles.chip}><Text style={styles.chipText}>Voting</Text></View>
+
+          <View className="flex-row gap-2">
+            <View className="bg-green-500 px-2 py-2 rounded-full w-[35px] h-[35px] items-center justify-center">
+              <Text className="text-white font-semibold text-xs">
+                {vibeScore}%
+              </Text>
+            </View>
+            <TouchableOpacity className="w-[35px] h-[35px] bg-black/50 rounded-full items-center justify-center border border-white/20">
+              <Bookmark size={20} color="white" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Event Info */}
+        <View className="absolute bottom-4 left-4 right-4">
+          <Text className="text-white text-2xl font-bold mb-1">
+            {event.title}
+          </Text>
+          <Text className="text-white/80 text-base mb-2">
+            {formatTime(event.startTime)}
+          </Text>
+          <Text className="text-white/80 text-base">
+            {event.venue} • {event.address}
+          </Text>
+
+          {/* Status Chips */}
+          <View className="flex-row gap-2 mt-3">
+            {currentState === "VOTING_OPEN" && (
+              <View className="bg-blue-500 px-3 py-1 rounded-full">
+                <Text className="text-white text-sm font-medium">• Voting</Text>
+              </View>
             )}
-            {e?.votingState === 'CLOSED' && (
-              <View style={styles.chip}><Text style={styles.chipText}>Voting complete</Text></View>
+            {currentState === "VOTING_CLOSED" && (
+              <View className="bg-gray-500 px-3 py-1 rounded-full">
+                <Text className="text-white text-sm font-medium">
+                  Voting complete
+                </Text>
+              </View>
             )}
-            {(isBookingConfirmed) && (
-              <View style={styles.chip}><Text style={styles.chipText}>Reservation ✓</Text></View>
+            {currentState === "BOOKED" && (
+              <View className="bg-green-500 px-3 py-1 rounded-full">
+                <Text className="text-white text-sm font-medium">
+                  ✓ Reservation
+                </Text>
+              </View>
+            )}
+            {currentState === "COMMITTED" && (
+              <View className="bg-green-500 px-3 py-1 rounded-full">
+                <Text className="text-white text-sm font-medium">
+                  Committed
+                </Text>
+              </View>
+            )}
+            {currentState === "CANT_MAKE_IT" && (
+              <View className="bg-red-500 px-3 py-1 rounded-full">
+                <Text className="text-white text-sm font-medium">
+                  Can't make it
+                </Text>
+              </View>
             )}
           </View>
         </View>
-      </ImageBackground>
+      </View>
 
-      <ScrollView contentContainerStyle={[styles.contentContainer, { paddingBottom: (joined ? 160 : 100) + insets.bottom }]} showsVerticalScrollIndicator={false}>
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Vibe analysis</Text>
-          <Text style={styles.sectionText}>{vibeText}</Text>
-          
-          {e?.vibeMatchScoreWithOtherUsers && (
-            <View style={styles.vibeScoreRow}>
-              <Text style={styles.vibeScoreLabel}>Match with others: </Text>
-              <Text style={styles.vibeScoreValue}>{e.vibeMatchScoreWithOtherUsers}%</Text>
-            </View>
-          )}
-
-          <View style={styles.tagsRow}>
-            {tags.map((tag) => (
-              <View key={tag} style={styles.tagChip}>
-                <Text style={styles.tagText}>{tag}</Text>
+      <ScrollView
+        className="flex-1 px-4 pt-4"
+        contentContainerStyle={{
+          paddingBottom:
+            insets.bottom + (currentState !== "PRE_JOIN" ? 160 : 100),
+        }}
+      >
+        {/* Vibe Analysis */}
+        <View className="bg-white/5 rounded-xl p-4 mb-4">
+          <Text className="text-white text-lg font-semibold mb-2">
+            Vibe Analysis (AI)
+          </Text>
+          <Text className="text-white/80 text-base mb-3">
+            This {event.venue?.toLowerCase() || "venue"} attracts creative
+            professionals and music lovers. High energy atmosphere with great
+            networking opportunities.
+          </Text>
+          <View className="flex-row flex-wrap gap-2">
+            {event.tags?.map((tag, index) => (
+              <View key={index} className="bg-white/10 px-3 py-1 rounded-full">
+                <Text className="text-white/90 text-sm">#{tag}</Text>
               </View>
             ))}
           </View>
         </View>
 
-        {attendees.length > 0 && (
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Who's going ({attendeeCount} {attendeeCount === 1 ? 'person' : 'people'})</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.avatarsRow}>
-              {attendees.map((a) => (
-                a.avatar ? (
-                  <ImageBackground key={a.id} source={{ uri: a.avatar }} style={styles.avatar} imageStyle={styles.avatarImage} />
-                ) : (
-                  <View key={a.id} style={[styles.avatar, styles.avatarInitial]}>
-                    <Text style={styles.avatarInitialText}>
-                      {a.name?.charAt(0)?.toUpperCase() || '?'}
+        {/* Who's Going */}
+        {event.participants && event.participants.length > 0 && (
+          <View className="bg-white/5 rounded-xl p-4 mb-4">
+            <Text className="text-white text-lg font-semibold mb-3">
+              Who's Going ({event.interestedCount || event.participants.length}{" "}
+              people)
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View className="flex-row gap-3">
+                {event.participants.map((participant) => (
+                  <View key={participant.id} className="items-center">
+                    {participant.avatar ? (
+                      <Image
+                        source={{ uri: participant.avatar }}
+                        className="w-12 h-12 rounded-full"
+                      />
+                    ) : (
+                      <View className="w-12 h-12 bg-green-500 rounded-full items-center justify-center">
+                        <Text className="text-white font-semibold">
+                          {participant.name?.charAt(0)?.toUpperCase() || "?"}
+                        </Text>
+                      </View>
+                    )}
+                    <Text
+                      className="text-white/80 text-xs mt-1"
+                      numberOfLines={1}
+                    >
+                      {participant.name}
+                    </Text>
+                    <Text className="text-green-400 text-xs">
+                      {event.vibeMatchScoreWithOtherUsers || 90}%
                     </Text>
                   </View>
-                )
-              ))}
+                ))}
+              </View>
             </ScrollView>
           </View>
         )}
 
-        {!joined && plans.length > 0 && (
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Plan Options</Text>
-            {plans.map((p) => (
-              <View key={p.id} style={styles.planRow}>
-                <View style={styles.planLeft}>
-                  <Text style={styles.planEmoji}>{p.emoji ?? '🎯'}</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.planTitle}>{p.title}</Text>
-                    {typeof (p as any).votes === 'number' && (
-                      <Text style={styles.planSub}>{(p as any).votes} votes</Text>
+        {/* Plan Options - Pre-Join */}
+        {currentState === "PRE_JOIN" && plans.length > 0 && (
+          <View className="bg-white/5 rounded-xl p-4 mb-4">
+            <Text className="text-white text-lg font-semibold mb-3">
+              Plan Options
+            </Text>
+            {plans.map((plan) => (
+              <View key={plan.id} className="bg-white/5 rounded-lg p-3 mb-3">
+                <View className="flex-row items-start gap-3">
+                  <Text className="text-2xl">{plan.emoji || "⛅"}</Text>
+                  <View className="flex-1">
+                    <View className="flex-row items-center justify-between mb-1">
+                      <Text className="text-white font-semibold text-base">
+                        {plan.title}
+                      </Text>
+                      <Text className="text-white/60 text-sm">
+                        {plan.votes || 0} votes
+                      </Text>
+                    </View>
+                    <Text className="text-white/80 text-sm">
+                      {plan.description}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Voting Section - Voting Open */}
+        {currentState === "VOTING_OPEN" && (
+          <View className="bg-white/5 rounded-xl p-4 mb-4">
+            <View className="flex-row items-center justify-between mb-3">
+              <Text className="text-white text-lg font-semibold">
+                Vote on Plans
+              </Text>
+              <View className="flex-row items-center gap-2">
+                <Clock size={16} color="white" />
+                <Text className="text-white font-mono">{voteCountdown}</Text>
+              </View>
+            </View>
+
+            {plans.map((plan) => (
+              <TouchableOpacity
+                key={plan.id}
+                onPress={() => handleVote(plan.id)}
+                className={`bg-white/5 rounded-lg p-3 mb-3 border ${
+                  selectedPlanId === plan.id
+                    ? "border-green-500"
+                    : "border-white/10"
+                }`}
+              >
+                <View className="flex-row items-start gap-3">
+                  <View
+                    className={`w-5 h-5 rounded-full border-2 mt-1 items-center justify-center ${
+                      selectedPlanId === plan.id
+                        ? "border-green-500 bg-green-500"
+                        : "border-white/40"
+                    }`}
+                  >
+                    {selectedPlanId === plan.id && (
+                      <View className="w-2 h-2 bg-white rounded-full" />
                     )}
                   </View>
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {joined && e?.votingState === 'OPEN' && (
-          <View style={styles.card}>
-            <View style={styles.voteHeaderRow}>
-              <Text style={styles.sectionTitle}>Vote on Plans</Text>
-              <Text style={styles.countdown}>{voteCountdown ?? ''}</Text>
-            </View>
-            {plans.map((p) => (
-              <TouchableOpacity key={p.id} style={styles.planRow} onPress={async () => {
-                setSelectedPlanId(p.id);
-                try { await eventsService.votePlan(id, p.id); } catch {}
-              }}>
-                <View style={styles.planLeft}>
-                  <Text style={styles.planEmoji}>{p.emoji ?? '🎯'}</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.planTitle}>{p.title}</Text>
-                    <Text style={styles.planSub}>{p.votes} votes</Text>
+                  <Text className="text-2xl">{plan.emoji || "⛅"}</Text>
+                  <View className="flex-1">
+                    <View className="flex-row items-center justify-between mb-1">
+                      <Text className="text-white font-semibold text-base">
+                        {plan.title}
+                      </Text>
+                      <View className="flex-row items-center gap-2">
+                        <Text className="text-white/60 text-sm">
+                          {plan.votes || 0} votes
+                        </Text>
+                        <Text className="text-green-400 text-sm">
+                          {Math.round(
+                            ((plan.votes || 0) /
+                              Math.max(
+                                1,
+                                plans.reduce(
+                                  (sum, p) => sum + (p.votes || 0),
+                                  0
+                                )
+                              )) *
+                              100
+                          )}
+                          %
+                        </Text>
+                      </View>
+                    </View>
+                    <Text className="text-white/80 text-sm">
+                      {plan.description}
+                    </Text>
                   </View>
                 </View>
-                <View style={[styles.radio, selectedPlanId === p.id && styles.radioSelectedOuter]}>
-                  {selectedPlanId === p.id && <View style={styles.radioInner} />}
-                </View>
               </TouchableOpacity>
             ))}
           </View>
         )}
 
-        {joined && e?.votingState === 'CLOSED' && (
-          <View style={styles.card}>
-            {plans.filter((p) => p.isSelected).map((p) => (
-              <View key={p.id} style={styles.selectedPlanCard}>
-                <Text style={styles.planTitle}>✓ {p.title}</Text>
-                <Text style={styles.planSub}>Voting complete</Text>
-              </View>
-            ))}
-          </View>
-        )}
+        {/* Selected Plan - Voting Closed/Booked */}
+        {(currentState === "VOTING_CLOSED" || currentState === "BOOKED") &&
+          selectedPlan && (
+            <View className="bg-white/5 rounded-xl p-4 mb-4">
+              <Text className="text-green-400 text-base font-semibold mb-2">
+                ✓ Selected Plan: {selectedPlan.emoji} {selectedPlan.title}
+              </Text>
+              <Text className="text-white/60 text-sm">
+                Status: Voting complete
+              </Text>
+            </View>
+          )}
 
-        {joined && e?.votingState === 'CLOSED' && (
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Book Your Spot</Text>
-            <View style={styles.bookingCard}>
-              <Text style={styles.bookingTitle}>Reserve Your Table</Text>
-              <Text style={styles.bookingSub}>To secure your spot for tonight</Text>
-              <View style={styles.bookingActions}>
-                <TouchableOpacity style={[styles.primaryBtn]} onPress={async () => { if (booking?.externalBookingUrl) await WebBrowser.openBrowserAsync(booking.externalBookingUrl); }}>
-                  <Text style={styles.primaryBtnText}>Book Now</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.ghostBtn]} onPress={async () => { await eventsService.bookingConfirm(id); setIsBookingConfirmed(true); }}>
-                  <Text style={styles.ghostBtnText}>Already Booked</Text>
-                </TouchableOpacity>
-              </View>
-              {isBookingConfirmed && (
-                <Text style={styles.successText}>Reservation confirmed</Text>
-              )}
+        {/* Booking Section - Voting Closed */}
+        {currentState === "VOTING_CLOSED" && (
+          <View className="bg-white/5 rounded-xl p-4 mb-4">
+            <Text className="text-white text-lg font-semibold mb-3">
+              Book Your Spot
+            </Text>
+            <View className="bg-white/5 rounded-lg p-4 mb-4">
+              <Text className="text-white font-semibold mb-2">
+                Reserve Your Table at {event.venue}
+              </Text>
+              <Text className="text-white/80 text-sm mb-3">
+                Ensures a table ready for our group.
+              </Text>
+              <Text className="text-white/60 text-sm">
+                Party size: {event.interestedCount} • Time:{" "}
+                {formatTime(event.startTime)} • Date: Tonight
+              </Text>
+            </View>
+            <View className="flex-row gap-3">
+              <TouchableOpacity
+                onPress={handleBooking}
+                className="flex-1 bg-green-500 py-3 rounded-lg"
+              >
+                <Text className="text-white text-center font-semibold">
+                  Book Now
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleBookingConfirm}
+                className="flex-1 bg-white/10 py-3 rounded-lg border border-white/20"
+              >
+                <Text className="text-white text-center font-semibold">
+                  Already Booked
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
         )}
 
-        {joined && (
-          <View style={styles.card}>
-            {messages.map((m) => (
-              <View key={m.id} style={[styles.chatBubble, m.from === 'me' ? styles.chatMe : styles.chatOther]}>
-                <Text style={styles.chatText}>{m.text}</Text>
-              </View>
-            ))}
+        {/* Commit Section - Booked */}
+        {currentState === "BOOKED" && (
+          <View className="bg-white/5 rounded-xl p-4 mb-4">
+            <Text className="text-green-400 text-base font-semibold mb-1">
+              ✓ Reservation: All set for tonight
+            </Text>
           </View>
         )}
 
-        {joined && e?.votingState === 'CLOSED' && (
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Commit to Attend?</Text>
-            <View style={styles.commitRow}>
-              <TouchableOpacity style={styles.primaryBtn} onPress={async () => { await eventsService.commit(id, 'IN'); }}>
-                <Text style={styles.primaryBtnText}>I’m In</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.ghostBtn} onPress={async () => { await eventsService.commit(id, 'OUT'); }}>
-                <Text style={styles.ghostBtnText}>Can’t Make It</Text>
-              </TouchableOpacity>
+        {/* Chat Section - After Joining */}
+        {(currentState === "VOTING_OPEN" ||
+          currentState === "VOTING_CLOSED" ||
+          currentState === "BOOKED" ||
+          currentState === "COMMITTED" ||
+          currentState === "CANT_MAKE_IT") && (
+          <View className="bg-white/5 rounded-xl p-4 mb-4">
+            <Text className="text-white text-lg font-semibold mb-3">Chat</Text>
+            <View className="max-h-64">
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {messages.length === 0 ? (
+                  <Text className="text-white/60 text-center py-4">
+                    No messages yet
+                  </Text>
+                ) : (
+                  messages.map((message, index) => (
+                    <View key={index} className="mb-2">
+                      <Text className="text-white/80 text-sm">
+                        <Text className="font-semibold">
+                          {message.userId ? "User" : "System"}
+                        </Text>
+                        {": "}
+                        {message.text}
+                      </Text>
+                    </View>
+                  ))
+                )}
+              </ScrollView>
             </View>
           </View>
         )}
       </ScrollView>
 
-      {!joined && (
-        <View style={styles.footerActions}>
-          <TouchableOpacity style={[styles.footerButton, styles.footerButtonGhost]} onPress={async () => { await eventsService.join(id); setJoined(true); seedMessages(); }}>
-            <Text style={styles.footerButtonText}>Join now</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.footerButton, styles.footerButtonGhost]} onPress={() => navigation.goBack()}>
-            <Text style={styles.footerButtonText}>Close</Text>
-          </TouchableOpacity>
+      {/* Bottom Actions */}
+      {currentState === "PRE_JOIN" && (
+        <View
+          className="p-4 bg-black border-t border-white/10"
+          style={{ paddingBottom: insets.bottom + 16 }}
+        >
+          <View className="flex-row gap-3">
+            <TouchableOpacity
+              onPress={handleJoin}
+              className="flex-1 bg-green-500 py-4 rounded-lg"
+            >
+              <Text className="text-white text-center font-semibold text-base">
+                Join Now
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              className="flex-1 bg-white/10 py-4 rounded-lg border border-white/20"
+            >
+              <Text className="text-white text-center font-semibold text-base">
+                Close
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 
-      {joined && (
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.chatContainer}>
-          <View style={{ paddingHorizontal: 12, paddingTop: 8 }}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-              {['I’m so excited! 🎉', 'Count me in!', 'Ready to dance! 💃'].map((q) => (
-                <TouchableOpacity key={q} style={styles.quickReply} onPress={() => setInput(q)}>
-                  <Text style={styles.quickReplyText}>{q}</Text>
+      {/* Chat Input - After Joining */}
+      {(currentState === "VOTING_OPEN" ||
+        currentState === "VOTING_CLOSED" ||
+        currentState === "BOOKED" ||
+        currentState === "COMMITTED" ||
+        currentState === "CANT_MAKE_IT") && (
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          className="bg-black border-t border-white/10"
+        >
+          {/* Quick Replies */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            className="px-4 py-2"
+            contentContainerStyle={{ gap: 8 }}
+          >
+            {["I'm so excited! 🎉", "Count me in!", "Ready to dance! 💃"].map(
+              (quickReply) => (
+                <TouchableOpacity
+                  key={quickReply}
+                  onPress={() => setChatInput(quickReply)}
+                  className="bg-white/10 px-3 py-2 rounded-full"
+                >
+                  <Text className="text-white/90 text-sm">{quickReply}</Text>
                 </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-          <View style={styles.chatInputRow}>
+              )
+            )}
+          </ScrollView>
+
+          <View
+            className="flex-row items-center p-4 gap-3"
+            style={{ paddingBottom: insets.bottom + 16 }}
+          >
             <TextInput
-              style={styles.chatInput}
-              placeholder="Message..."
-              placeholderTextColor="rgba(255,255,255,0.6)"
-              value={input}
-              onChangeText={setInput}
+              value={chatInput}
+              onChangeText={setChatInput}
+              placeholder="Share your thoughts..."
+              placeholderTextColor="rgba(255,255,255,0.5)"
+              className="flex-1 bg-white/10 rounded-full px-4 py-3 text-white"
+              multiline
             />
             <TouchableOpacity
-              style={styles.chatSend}
-              onPress={async () => {
-                if (!input.trim()) return;
-                const sent = await eventsService.chatSend(id, input.trim());
-                setMessages((prev) => [...prev, { id: sent.id, text: sent.text, from: 'me' }]);
-                setInput('');
-              }}
+              onPress={handleSendMessage}
+              className="bg-green-500 w-12 h-12 rounded-full items-center justify-center"
             >
-              <Text style={styles.chatSendText}>Send</Text>
+              <MessageCircle size={20} color="white" />
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
       )}
+
+      {/* Commit Actions - Booked State */}
+      {currentState === "BOOKED" && (
+        <View
+          className="absolute bottom-0 left-0 right-0 bg-black border-t border-white/10 p-4"
+          style={{ paddingBottom: insets.bottom + 16 }}
+        >
+          <Text className="text-white text-center mb-3">
+            Commit to Attend? {event.venue} • Tonight
+          </Text>
+          <View className="flex-row gap-3">
+            <TouchableOpacity
+              onPress={() => handleCommit("IN")}
+              className="flex-1 bg-green-500 py-3 rounded-lg"
+            >
+              <Text className="text-white text-center font-semibold">
+                I'm In
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => handleCommit("OUT")}
+              className="flex-1 bg-red-500 py-3 rounded-lg"
+            >
+              <Text className="text-white text-center font-semibold">
+                Can't Make It
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#000',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-  },
-  headerImage: {
-    height: 340,
-    justifyContent: 'flex-end',
-  },
-  headerImageStyle: {
-    resizeMode: 'cover',
-  },
-  headerOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-  },
-  headerContent: {
-    padding: 16,
-    paddingTop: 24,
-    position: 'relative',
-  },
-  backBtn: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  backBtnText: { color: '#fff', fontWeight: '700' },
-  scoreBadge: {
-    backgroundColor: '#00C48C',
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  scoreBadgeText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  title: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: '800',
-  },
-  scorePill: {
-    alignSelf: 'flex-start',
-    minWidth: 48,
-    height: 28,
-    paddingHorizontal: 10,
-    borderRadius: 999,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  headerChipsRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
-  chip: { backgroundColor: 'rgba(0,0,0,0.5)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
-  chipText: { color: '#fff', fontSize: 12, fontWeight: '600' },
-  scorePillText: {
-    color: '#fff',
-    fontWeight: '800',
-    fontSize: 12,
-  },
-  contentContainer: {
-    padding: 16,
-    paddingBottom: 100,
-  },
-  card: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  sectionText: {
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: 14,
-    marginBottom: 12,
-  },
-  tagsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  tagChip: {
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  tagText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  avatarsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingRight: 8,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-  },
-  avatarImage: {
-    borderRadius: 20,
-    resizeMode: 'cover',
-  },
-  avatarInitial: {
-    backgroundColor: '#7e22ce',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarInitialText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  footerActions: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 24,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  footerButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  footerButtonGhost: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#fff',
-    alignItems: 'center',
-  },
-  footerButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  chatContainer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.8)',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.1)',
-  },
-  chatList: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8, maxHeight: 240 },
-  chatBubble: {
-    maxWidth: '75%',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    marginBottom: 8,
-  },
-  chatMe: { alignSelf: 'flex-end', backgroundColor: '#00C48C' },
-  chatOther: { alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,0.1)' },
-  chatText: { color: '#fff' },
-  chatInputRow: { flexDirection: 'row', alignItems: 'center', padding: 10 },
-  chatInput: { flex: 1, color: '#fff', paddingVertical: 10, paddingHorizontal: 12, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 8, marginRight: 8 },
-  chatSend: { paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: '#fff', borderRadius: 10 },
-  chatSendText: { color: '#fff', fontWeight: '700' },
-  quickReply: { backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 },
-  quickReplyText: { color: 'rgba(255,255,255,0.9)', fontSize: 12, fontWeight: '600' },
-  voteHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  countdown: { color: '#fff', fontWeight: '700' },
-  planRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
-  planLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
-  planEmoji: { fontSize: 18, marginRight: 8 },
-  planTitle: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  planSub: { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 2 },
-  radio: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: 'rgba(255,255,255,0.6)', alignItems: 'center', justifyContent: 'center' },
-  radioSelectedOuter: { borderColor: '#00C48C' },
-  radioInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#00C48C' },
-  selectedPlanCard: { backgroundColor: 'rgba(255,255,255,0.06)', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  bookingCard: { backgroundColor: 'rgba(255,255,255,0.06)', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', gap: 8 },
-  bookingTitle: { color: '#fff', fontWeight: '700' },
-  bookingSub: { color: 'rgba(255,255,255,0.8)' },
-  bookingActions: { flexDirection: 'row', gap: 8, marginTop: 6 },
-  primaryBtn: { backgroundColor: '#00C48C', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
-  primaryBtnText: { color: '#000', fontWeight: '700' },
-  ghostBtn: { borderWidth: 1, borderColor: '#fff', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
-  ghostBtnText: { color: '#fff', fontWeight: '700' },
-  successText: { color: '#00C48C', fontWeight: '700', marginTop: 6 },
-  commitRow: { flexDirection: 'row', gap: 10 },
-  vibeScoreRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  vibeScoreLabel: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  vibeScoreValue: {
-    color: '#00C48C',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-});
