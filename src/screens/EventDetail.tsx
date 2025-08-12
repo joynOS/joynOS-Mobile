@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, ImageBackground, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, StatusBar, Platform, TextInput, KeyboardAvoidingView, Linking } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, ImageBackground, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, StatusBar, Platform, TextInput, KeyboardAvoidingView } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
@@ -32,16 +32,11 @@ export default function EventDetail() {
   }, [id]);
   const title = e?.title ?? '';
   const imageUrl = e?.imageUrl || `https://source.unsplash.com/collection/190727/1200x1600?sig=${id}`;
-  const vibeScore = e ? Math.max(70, Math.min(95, Math.floor(80 + (e.tags?.length || 0) * 3))) : 0;
+  const vibeScore = e?.vibeMatchScoreEvent || (e ? Math.max(70, Math.min(95, Math.floor(80 + (e.tags?.length || 0) * 3))) : 0);
   const vibeText = 'High-energy match based on timing, interests, and location radius.';
-  const tags = e?.tags || ['NYC'];
-  const attendees = useMemo(() => (
-    Array.from({ length: 8 }).map((_, i) => ({
-      id: i + 1,
-      avatar: `https://randomuser.me/api/portraits/${i % 2 === 0 ? 'men' : 'women'}/${(i * 7) % 90}.jpg`,
-    }))
-  ), [e?.id]);
-  const attendeeCount = attendees.length;
+  const tags = e?.tags || [];
+  const attendees = e?.participants || [];
+  const attendeeCount = e?.interestedCount || 0;
 
   const [joined, setJoined] = useState(false);
   const [messages, setMessages] = useState<{ id: string; text: string; from: 'me' | 'other' }[]>([]);
@@ -99,10 +94,7 @@ export default function EventDetail() {
   }, [joined, e?.votingState, id]);
 
   const seedMessages = () => {
-    setMessages([
-      { id: 'sys1', text: 'Welcome to the lobby! 🎉', from: 'other' },
-      { id: 'sys2', text: 'Say hi and coordinate arrivals.', from: 'other' },
-    ]);
+    setMessages([]);
   };
 
   return (
@@ -136,6 +128,13 @@ export default function EventDetail() {
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Vibe analysis</Text>
           <Text style={styles.sectionText}>{vibeText}</Text>
+          
+          {e?.vibeMatchScoreWithOtherUsers && (
+            <View style={styles.vibeScoreRow}>
+              <Text style={styles.vibeScoreLabel}>Match with others: </Text>
+              <Text style={styles.vibeScoreValue}>{e.vibeMatchScoreWithOtherUsers}%</Text>
+            </View>
+          )}
 
           <View style={styles.tagsRow}>
             {tags.map((tag) => (
@@ -146,14 +145,24 @@ export default function EventDetail() {
           </View>
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Who’s going ({attendeeCount} {attendeeCount === 1 ? 'person' : 'people'})</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.avatarsRow}>
-            {attendees.map((a) => (
-              <ImageBackground key={a.id} source={{ uri: a.avatar }} style={styles.avatar} imageStyle={styles.avatarImage} />
-            ))}
-          </ScrollView>
-        </View>
+        {attendees.length > 0 && (
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Who's going ({attendeeCount} {attendeeCount === 1 ? 'person' : 'people'})</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.avatarsRow}>
+              {attendees.map((a) => (
+                a.avatar ? (
+                  <ImageBackground key={a.id} source={{ uri: a.avatar }} style={styles.avatar} imageStyle={styles.avatarImage} />
+                ) : (
+                  <View key={a.id} style={[styles.avatar, styles.avatarInitial]}>
+                    <Text style={styles.avatarInitialText}>
+                      {a.name?.charAt(0)?.toUpperCase() || '?'}
+                    </Text>
+                  </View>
+                )
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
         {!joined && plans.length > 0 && (
           <View style={styles.card}>
@@ -433,6 +442,16 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     resizeMode: 'cover',
   },
+  avatarInitial: {
+    backgroundColor: '#7e22ce',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarInitialText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   footerActions: {
     position: 'absolute',
     left: 16,
@@ -505,4 +524,19 @@ const styles = StyleSheet.create({
   ghostBtnText: { color: '#fff', fontWeight: '700' },
   successText: { color: '#00C48C', fontWeight: '700', marginTop: 6 },
   commitRow: { flexDirection: 'row', gap: 10 },
+  vibeScoreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  vibeScoreLabel: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  vibeScoreValue: {
+    color: '#00C48C',
+    fontSize: 14,
+    fontWeight: '700',
+  },
 });

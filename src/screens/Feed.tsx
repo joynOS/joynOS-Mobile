@@ -305,7 +305,7 @@ export default function Feed() {
                   {/* Grid */}
                   <View style={styles.grid}>
                     {discovery.map((event, index) => {
-                      const vibeScore = Math.min(
+                      const vibeScore = event.vibeMatchScoreEvent || Math.min(
                         95,
                         Math.max(
                           75,

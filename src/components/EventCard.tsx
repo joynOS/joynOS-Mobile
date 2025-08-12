@@ -19,8 +19,8 @@ interface EventCardProps {
 export default function EventCard({ event, onTap, variant = 'card' }: EventCardProps) {
     const navigation = useNavigation();
     const tagCount = Array.isArray((event as any).tags) ? (event as any).tags.length : 0;
-    const compatibilityScore = Math.max(70, Math.min(95, Math.floor(80 + tagCount * 3)));
-    const memberCount = Math.floor(Math.random() * 20) + 5;
+    const compatibilityScore = (event as any).vibeMatchScoreEvent || Math.max(70, Math.min(95, Math.floor(80 + tagCount * 3)));
+    const memberCount = (event as any).interestedCount || Math.floor(Math.random() * 20) + 5;
 
     const [liked, setLiked] = useState(false);
     const [favorited, setFavorited] = useState(false);
@@ -89,21 +89,26 @@ export default function EventCard({ event, onTap, variant = 'card' }: EventCardP
                     {/* Members */}
                     <View style={styles.membersRow}>
                         <View style={styles.avatars}>
-                            <Image
-                                source={{ uri: 'https://images.unsplash.com/photo-1494790108755-2616b612b8e5?w=60&h=60&fit=crop&crop=face' }}
-                                style={styles.avatar}
-                            />
-                            <Image
-                                source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=60&h=60&fit=crop&crop=face' }}
-                                style={styles.avatar}
-                            />
-                            <Image
-                                source={{ uri: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=60&h=60&fit=crop&crop=face' }}
-                                style={styles.avatar}
-                            />
-                            <View style={styles.avatarMore}>
-                                <Text style={styles.avatarMoreText}>+{Math.max(0, memberCount - 3)}</Text>
-                            </View>
+                            {((event as any).participants || []).slice(0, 3).map((participant: any, idx: number) => (
+                                participant.avatar ? (
+                                    <Image
+                                        key={participant.id}
+                                        source={{ uri: participant.avatar }}
+                                        style={styles.avatar}
+                                    />
+                                ) : (
+                                    <View key={participant.id} style={[styles.avatar, styles.avatarInitial]}>
+                                        <Text style={styles.avatarInitialText}>
+                                            {participant.name?.charAt(0)?.toUpperCase() || '?'}
+                                        </Text>
+                                    </View>
+                                )
+                            ))}
+                            {memberCount > 3 && (
+                                <View style={styles.avatarMore}>
+                                    <Text style={styles.avatarMoreText}>+{Math.max(0, memberCount - 3)}</Text>
+                                </View>
+                            )}
                         </View>
                         <Text style={styles.memberText}>{memberCount} interested</Text>
                     </View>
@@ -270,6 +275,16 @@ const styles = StyleSheet.create({
     avatarMoreText: {
         color: 'white',
         fontSize: 12,
+        fontWeight: '600',
+    },
+    avatarInitial: {
+        backgroundColor: '#7e22ce',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    avatarInitialText: {
+        color: 'white',
+        fontSize: 14,
         fontWeight: '600',
     },
     memberText: {

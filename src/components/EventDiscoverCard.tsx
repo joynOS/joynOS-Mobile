@@ -55,7 +55,8 @@ const getCategory = (
   return { label: ev.aiNormalized?.categories?.[0] ?? raw, emoji: "✨" } as any;
 };
 
-const getVibeScore = (ev: EventLike) => {
+const getVibeScore = (ev: any) => {
+  if (ev.vibeMatchScoreEvent) return ev.vibeMatchScoreEvent;
   const base = (ev.tags?.length ?? 0) + (ev.aiNormalized?.tags?.length ?? 0);
   const raw = 80 + base * 3;
   return Math.max(85, Math.min(95, Math.floor(raw)));

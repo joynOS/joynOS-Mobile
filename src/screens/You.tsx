@@ -97,11 +97,12 @@ export default function You() {
             attendees:
               typeof ev.attendeesCount === "number"
                 ? ev.attendeesCount
-                : undefined,
+                : ev.interestedCount,
             maxAttendees:
               typeof ev.maxAttendees === "number" ? ev.maxAttendees : undefined,
             status,
-            vibeScore: Math.min(95, Math.max(75, 80 + vibeBase * 2)),
+            vibeScore: ev.vibeMatchScoreEvent || Math.min(95, Math.max(75, 80 + vibeBase * 2)),
+            vibeMatchScoreWithOtherUsers: ev.vibeMatchScoreWithOtherUsers,
             lastMessage: undefined,
             unreadCount: 0,
             category: tags?.[0] ?? "Event",
@@ -459,6 +460,15 @@ export default function You() {
                                             {event.vibeScore}%
                                           </Text>
                                         </View>
+                                        
+                                        {/* Vibe Match with Others */}
+                                        {event.vibeMatchScoreWithOtherUsers && (
+                                          <View style={styles.vibeMatchBadge}>
+                                            <Text style={styles.vibeMatchBadgeText}>
+                                              {event.vibeMatchScoreWithOtherUsers}% match
+                                            </Text>
+                                          </View>
+                                        )}
                                       </View>
                                     </View>
                                   </View>
@@ -1412,4 +1422,17 @@ const styles = StyleSheet.create({
   bgBlack60: { backgroundColor: "rgba(0,0,0,0.6)" },
   bgJoynYellow90: { backgroundColor: "rgba(242, 201, 76, 0.9)" },
   bgJoynPurple90: { backgroundColor: "rgba(155, 81, 224, 0.9)" },
+  
+  vibeMatchBadge: {
+    backgroundColor: "rgba(0,0,0,0.4)",
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginTop: 4,
+  },
+  vibeMatchBadgeText: {
+    color: "#00C48C",
+    fontSize: 10,
+    fontWeight: "600",
+  },
 });

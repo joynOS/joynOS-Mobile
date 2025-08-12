@@ -113,6 +113,16 @@ export type EventDetail = {
   createdAt: string;
   updatedAt: string;
   plans: EventPlan[];
+  // Dynamic scoring and analytics
+  vibeMatchScoreEvent: number;
+  vibeMatchScoreWithOtherUsers: number;
+  distanceMiles: number;
+  interestedCount: number;
+  participants: EventParticipant[];
+  overlap: number;
+  cosine: number;
+  penalty: number;
+  rate: number;
 };
 
 export type JoinLeaveResponse = {
@@ -137,4 +147,11 @@ export type ChatItem = {
 export type ChatList = {
   items: ChatItem[];
   nextCursor: string | null;
+};
+
+export type EventParticipant = {
+  id: string;
+  name: string;
+  avatar: string | null;
+  status: 'JOINED' | 'CANT_MAKE_IT' | 'COMMITTED';
 };
