@@ -117,7 +117,6 @@ export default function Welcome() {
             </Text>
           </View>
 
-          {/* Conteúdo principal */}
           <View style={styles.card}>
             {!showPhoneAuth ? (
               <>
@@ -141,7 +140,7 @@ export default function Welcome() {
                   onPress={() => handleSocialAuth("apple")}
                   loading={loadingProvider === "apple"}
                   disabled={loadingProvider !== null}
-                  style={[styles.socialButton, styles.googleButton]}
+                  style={[styles.socialButton, styles.appleButton]}
                   title={
                     loadingProvider === "apple" ? "" : "Continue with Apple"
                   }
@@ -154,6 +153,18 @@ export default function Welcome() {
                 </Button>
 
                 <Text style={styles.orText}>or</Text>
+
+                <Button
+                  onPress={() => navigation.navigate('Register' as never)}
+                  style={styles.primaryButton}
+                  title="Create Account"
+                />
+
+                <Button
+                  onPress={() => navigation.navigate('Login' as never)}
+                  style={styles.secondaryButton}
+                  title="Sign In"
+                />
 
                 <Button
                   onPress={() => setShowPhoneAuth(true)}
@@ -283,10 +294,28 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.2)",
     borderWidth: 1,
   },
-  phoneButton: {
+  appleButton: {
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderColor: "rgba(255,255,255,0.2)",
+    borderWidth: 1,
+  },
+  primaryButton: {
+    backgroundColor: "#00C48C",
+    marginBottom: 12,
+    height: 52,
+  },
+  secondaryButton: {
     backgroundColor: "transparent",
     borderColor: "rgba(255,255,255,0.3)",
     borderWidth: 1,
+    marginBottom: 12,
+    height: 52,
+  },
+  phoneButton: {
+    backgroundColor: "transparent",
+    borderColor: "rgba(255,255,255,0.2)",
+    borderWidth: 1,
+    height: 48,
   },
   orText: {
     color: "#999",

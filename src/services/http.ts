@@ -14,6 +14,7 @@ export const tokenStorage = {
     return AsyncStorage.getItem(REFRESH_TOKEN_KEY);
   },
   async setTokens(tokens: AccessTokens) {
+    console.log("setTokens: ", tokens);
     const access = tokens?.accessToken ?? null;
     const refresh = tokens?.refreshToken ?? null;
     if (!access || !refresh) {
@@ -33,10 +34,24 @@ export const tokenStorage = {
 export const http = axios.create({ baseURL: BASE_URL });
 
 http.interceptors.request.use(async (config) => {
-  const token = await tokenStorage.getAccessToken();
-  if (token) {
-    config.headers = config.headers ?? {};
-    config.headers.Authorization = `Bearer ${token}`;
+  console.log('📤 HTTP Request:', {
+    method: config.method?.toUpperCase(),
+    url: config.url,
+    fullUrl: config.baseURL + config.url,
+    headers: config.headers
+  });
+  
+  // Don't add auth token for signup/signin requests
+  const isAuthRequest = config.url?.includes('/auth/signup') || config.url?.includes('/auth/signin');
+  console.log('🔐 Is auth request?', isAuthRequest, 'for URL:', config.url);
+  
+  if (!isAuthRequest) {
+    const token = await tokenStorage.getAccessToken();
+    console.log('🔑 Token found:', !!token);
+    if (token) {
+      config.headers = config.headers ?? {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
   }
   return config;
 });
@@ -50,8 +65,22 @@ export const setUnauthorizedHandler = (fn: (() => void) | null) => {
 };
 
 http.interceptors.response.use(
-  (resp) => resp,
+  (resp) => {
+    console.log('📥 HTTP Response:', {
+      status: resp.status,
+      url: resp.config.url,
+      data: resp.data
+    });
+    return resp;
+  },
   async (error) => {
+    console.log('❌ HTTP Error:', {
+      status: error.response?.status,
+      url: error.config?.url,
+      message: error.message,
+      data: error.response?.data
+    });
+    
     const original = error.config;
     if (error.response?.status === 401 && !original._retry) {
       if (isRefreshing) {

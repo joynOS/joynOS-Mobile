@@ -3,9 +3,13 @@ import type { AccessTokens, Me } from "../types/api";
 
 export const authService = {
   async signup(payload: { email: string; password: string; name: string }) {
-    const { data } = await http.post<AccessTokens>("/auth/signup", payload);
-    await tokenStorage.setTokens(data);
-    return data;
+    const { data } = await http.post<any>("/auth/signup", payload);
+    const tokens = {
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken
+    };
+    await tokenStorage.setTokens(tokens);
+    return tokens;
   },
   async signin(payload: { email: string; password: string }) {
     const { data } = await http.post<AccessTokens>("/auth/signin", payload);

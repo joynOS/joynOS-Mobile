@@ -22,7 +22,15 @@ const AppContent = () => {
 
   return (
     <NavigationContainer>
-      {user ? (onboardingRequired ? <PublicNavigator /> : <PrivateNavigator />) : <PublicNavigator />}
+      {user ? (
+        onboardingRequired ? (
+          <PublicNavigator initialRouteName="PersonalityQuiz" />
+        ) : (
+          <PrivateNavigator />
+        )
+      ) : (
+        <PublicNavigator />
+      )}
     </NavigationContainer>
   );
 };

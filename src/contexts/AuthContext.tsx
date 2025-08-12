@@ -13,6 +13,8 @@ interface AuthContextType {
   user: Me | null;
   loading: boolean;
   logout: () => Promise<void>;
+  signin: (email: string, password: string) => Promise<void>;
+  signup: (name: string, email: string, password: string) => Promise<void>;
   requestPhoneCode: (phone: string) => Promise<{ sent: boolean; code: string }>;
   verifyPhoneCode: (
     phone: string,
@@ -75,6 +77,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const signin = async (email: string, password: string) => {
+    await authService.signin({ email, password });
+    const me = await authService.me();
+    setUser(me);
+  };
+
+  const signup = async (name: string, email: string, password: string) => {
+    await authService.signup({ name, email, password });
+    const me = await authService.me();
+    setUser(me);
+  };
+
   const requestPhoneCode = (phone: string) =>
     authService.requestPhone({ phone });
   const verifyPhoneCode = async (
@@ -106,6 +120,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     loading,
     logout,
+    signin,
+    signup,
     requestPhoneCode,
     verifyPhoneCode,
     onboardingRequired,

@@ -1,33 +1,15 @@
-import React from 'react';
-import { TextInput, TextInputProps, StyleSheet, View } from 'react-native';
+import React from "react";
+import { TextInput, TextInputProps } from "react-native";
 
 export const Input: React.FC<TextInputProps> = (props) => {
-    return (
-        <View style={styles.wrapper}>
-            <TextInput
-                style={styles.input}
-                placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                {...props}
-                
-            />
-        </View>
-    );
+  return (
+    <TextInput
+      className="bg-white/10 border border-white/20 rounded-lg h-14 px-4 text-white text-base"
+      placeholderTextColor="rgba(255, 255, 255, 0.5)"
+      textAlignVertical="center"
+      {...props}
+    />
+  );
 };
-
-const styles = StyleSheet.create({
-    wrapper: {
-        backgroundColor: 'rgba(255,255,255,0.1)',
-        borderRadius: 8,
-        borderColor: 'rgba(255,255,255,0.2)',
-        borderWidth: 1,
-        marginBottom: 12,
-    },
-    input: {
-        height: 56,
-        paddingHorizontal: 16,
-        color: '#fff',
-        fontSize: 16,
-    },
-});
 
 export default Input;

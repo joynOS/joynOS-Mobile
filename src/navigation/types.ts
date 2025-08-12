@@ -1,5 +1,7 @@
 export type RootStackParamList = {
   Welcome: undefined;
+  Login: undefined;
+  Register: undefined;
   PersonalityQuiz: { phone?: string };
   InterestSelector: { phone?: string };
   Feed: undefined;
