@@ -2,6 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { Provider } from 'react-redux';
 import { View, ActivityIndicator } from 'react-native';
+import "./global.css";
 
 import { store } from './src/shared/store';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';

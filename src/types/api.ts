@@ -12,6 +12,12 @@ export type Me = {
   currentLat: number | null;
   currentLng: number | null;
   radiusMiles: number | null;
+  // Backend flag to decide onboarding routing
+  hasInterests?: boolean;
+  // Optional flags provided by backend to determine onboarding completion
+  hasCompletedInterests?: boolean | null;
+  hasCompletedQuiz?: boolean | null;
+  needsOnboarding?: boolean | null;
   aiProfile: Record<string, unknown> | null;
   createdAt: string;
   updatedAt: string;
@@ -101,6 +107,8 @@ export type EventDetail = {
   votingState: 'NOT_STARTED' | 'OPEN' | 'CLOSED';
   votingEndsAt: string | null;
   selectedPlanId: string | null;
+  // Backend flag: whether current user is a member of the event
+  isMember?: boolean;
   tags: string[];
   createdAt: string;
   updatedAt: string;

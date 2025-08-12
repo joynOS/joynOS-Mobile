@@ -6,7 +6,7 @@ import React, {
   ReactNode,
 } from "react";
 import { authService } from "../services/auth";
-import { tokenStorage } from "../services/http";
+import { tokenStorage, setUnauthorizedHandler } from "../services/http";
 import type { Me } from "../types/api";
 
 interface AuthContextType {
@@ -55,6 +55,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setLoading(false);
       }
     })();
+    setUnauthorizedHandler(async () => {
+      try {
+        await tokenStorage.clear();
+      } finally {
+        setUser(null);
+      }
+    });
+    return () => setUnauthorizedHandler(null);
   }, []);
 
   const logout = async () => {
@@ -84,7 +92,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(me);
   };
 
-  const onboardingRequired = !!user && (user.radiusMiles == null || user.currentLat == null || user.currentLng == null);
+  const onboardingRequired = !!user && (
+    user.hasInterests === false ||
+    user.needsOnboarding === true ||
+    user.hasCompletedInterests === false ||
+    user.hasCompletedQuiz === false ||
+    user.radiusMiles == null ||
+    user.currentLat == null ||
+    user.currentLng == null
+  );
 
   const value = {
     user,

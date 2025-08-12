@@ -22,6 +22,8 @@ export default function EventDetail() {
       const data = await eventsService.getById(id);
       setE(data);
       setPlans(data.plans || []);
+      // Prefer backend flag for membership state
+      setJoined(!!data.isMember);
       try {
         const b = await eventsService.bookingInfo(id);
         setBooking(b);
@@ -39,6 +41,7 @@ export default function EventDetail() {
       avatar: `https://randomuser.me/api/portraits/${i % 2 === 0 ? 'men' : 'women'}/${(i * 7) % 90}.jpg`,
     }))
   ), [e?.id]);
+  const attendeeCount = attendees.length;
 
   const [joined, setJoined] = useState(false);
   const [messages, setMessages] = useState<{ id: string; text: string; from: 'me' | 'other' }[]>([]);
@@ -144,13 +147,32 @@ export default function EventDetail() {
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Who’s going</Text>
+          <Text style={styles.sectionTitle}>Who’s going ({attendeeCount} {attendeeCount === 1 ? 'person' : 'people'})</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.avatarsRow}>
             {attendees.map((a) => (
               <ImageBackground key={a.id} source={{ uri: a.avatar }} style={styles.avatar} imageStyle={styles.avatarImage} />
             ))}
           </ScrollView>
         </View>
+
+        {!joined && plans.length > 0 && (
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Plan Options</Text>
+            {plans.map((p) => (
+              <View key={p.id} style={styles.planRow}>
+                <View style={styles.planLeft}>
+                  <Text style={styles.planEmoji}>{p.emoji ?? '🎯'}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.planTitle}>{p.title}</Text>
+                    {typeof (p as any).votes === 'number' && (
+                      <Text style={styles.planSub}>{(p as any).votes} votes</Text>
+                    )}
+                  </View>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
 
         {joined && e?.votingState === 'OPEN' && (
           <View style={styles.card}>

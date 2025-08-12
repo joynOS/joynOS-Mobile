@@ -14,9 +14,15 @@ export const tokenStorage = {
     return AsyncStorage.getItem(REFRESH_TOKEN_KEY);
   },
   async setTokens(tokens: AccessTokens) {
+    const access = tokens?.accessToken ?? null;
+    const refresh = tokens?.refreshToken ?? null;
+    if (!access || !refresh) {
+      await AsyncStorage.multiRemove([ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY]);
+      throw new Error('Invalid tokens');
+    }
     await AsyncStorage.multiSet([
-      [ACCESS_TOKEN_KEY, tokens.accessToken],
-      [REFRESH_TOKEN_KEY, tokens.refreshToken],
+      [ACCESS_TOKEN_KEY, String(access)],
+      [REFRESH_TOKEN_KEY, String(refresh)],
     ]);
   },
   async clear() {
@@ -37,6 +43,11 @@ http.interceptors.request.use(async (config) => {
 
 let isRefreshing = false;
 let pending: Array<(token: string | null) => void> = [];
+let unauthorizedHandler: (() => void) | null = null;
+
+export const setUnauthorizedHandler = (fn: (() => void) | null) => {
+  unauthorizedHandler = fn;
+};
 
 http.interceptors.response.use(
   (resp) => resp,
@@ -60,6 +71,9 @@ http.interceptors.response.use(
         const resp = await axios.post<AccessTokens>(`${BASE_URL}/auth/refresh`, null, {
           headers: { 'x-refresh-token': refreshToken },
         });
+        if (!resp.data?.accessToken || !resp.data?.refreshToken) {
+          throw new Error('Invalid refresh response');
+        }
         await tokenStorage.setTokens(resp.data);
         pending.forEach((r) => r(resp.data.accessToken));
         pending = [];
@@ -70,6 +84,9 @@ http.interceptors.response.use(
         pending.forEach((r) => r(null));
         pending = [];
         await tokenStorage.clear();
+        if (unauthorizedHandler) {
+          try { unauthorizedHandler(); } catch {}
+        }
         return Promise.reject(e);
       } finally {
         isRefreshing = false;

@@ -36,9 +36,18 @@ export const eventsService = {
     if (params?.tags && params.tags.length > 0)
       query.tags = params.tags.join(",");
     if (params?.take) query.take = params.take;
-    const { data } = await http.get<any[]>(`/events/browse`, { params: query });
+    const { data } = await http.get<any[] | { items: any[] }>(`/events/browse`, { params: query });
 
     return data;
+  },
+  async myEvents() {
+    try {
+      const { data } = await http.get<EventDetail[]>(`/events/my`);
+      return data;
+    } catch (e) {
+      const { data } = await http.get<EventDetail[]>(`/me/events`);
+      return data;
+    }
   },
   async getPlans(id: string) {
     const { data } = await http.get<EventDetail["plans"]>(

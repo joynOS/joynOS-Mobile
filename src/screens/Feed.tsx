@@ -62,7 +62,8 @@ export default function Feed() {
         setCursor(rec.nextCursor);
         setHasMoreRec(!!rec.nextCursor && (rec.items?.length ?? 0) > 0);
         const browse = await eventsService.browse();
-        setDiscovery(browse.items);
+        const list = Array.isArray(browse) ? browse : (browse && (browse as any).items ? (browse as any).items : []);
+        setDiscovery(list);
         const detailCards = await Promise.all(
           (rec.items || []).slice(0, 6).map(async (it) => {
             const d = await eventsService.getById(it.eventId);
@@ -247,7 +248,8 @@ export default function Feed() {
                       !!rec.nextCursor && (rec.items?.length ?? 0) > 0
                     );
                     const browse = await eventsService.browse();
-                    setDiscovery(browse.items);
+                    const list = Array.isArray(browse) ? browse : (browse && (browse as any).items ? (browse as any).items : []);
+                    setDiscovery(list);
                     const detailCards = await Promise.all(
                       (rec.items || [])
                         .slice(0, 6)

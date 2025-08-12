@@ -31,7 +31,8 @@ export default function Discovery() {
     (async () => {
       try {
         const res = await eventsService.browse();
-        setItems(res || []);
+        const list = Array.isArray(res) ? res : (res && (res as any).items ? (res as any).items : []);
+        setItems(list);
       } catch (error) {
         console.error("Error loading events:", error);
       } finally {

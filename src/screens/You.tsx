@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, TextInput, Dimensions, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -16,22 +16,50 @@ import { RootStackParamList } from '../navigation/types';
 import { useAssets } from 'expo-asset';
 import EventImage from '../components/EventImage';
 
-type FeedScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Feed'>;
+type FeedScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 
 export default function You() {
     const navigation = useNavigation<FeedScreenNavigationProp>();
-    const isLoading = false;
+    const [isLoading, setIsLoading] = useState(true);
     const user = { name: 'Joyn User' };
     const [activeFilter, setActiveFilter] = useState<'all' | 'joined' | 'saved' | 'liked'>('all');
     const [sortBy, setSortBy] = useState<'date' | 'activity'>('date');
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [assets] = useAssets([require('../../assets/JoynOS_Logo.png')]);
+    const [joinedEvents, setJoinedEvents] = useState<any[]>([]);
 
-    if (isLoading) {
-        return (<View style={styles.loadingContainer}> <LoadingSpinner size="lg" /> </View>);
-    }
+    useEffect(() => {
+        (async () => {
+            try {
+                const mine = await eventsService.myEvents();
+                // Normalize to expected fields by UI
+                const normalized = (mine || []).map((e: any) => ({
+                    id: e.id,
+                    title: e.title,
+                    imageUrl: e.imageUrl,
+                    startTime: e.startTime,
+                    endTime: e.endTime,
+                    venue: e.venue ?? e.address ?? '',
+                    attendees: e.attendeesCount ?? 0,
+                    maxAttendees: e.maxAttendees ?? 0,
+                    status: 'attending',
+                    vibeScore: Math.min(95, Math.max(75, 80 + (e.tags?.length || 0) * 2)),
+                    lastMessage: undefined,
+                    unreadCount: 0,
+                    category: (e.tags || [])[0] ?? 'Event',
+                }));
+                // Sort by upcoming time
+                const sorted = normalized.sort((a: any, b: any) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+                setJoinedEvents(sorted);
+            } finally {
+                setIsLoading(false);
+            }
+        })();
+    }, []);
+
+    
 
     const getTimeUntilEvent = (startTime: Date) => {
         const now = new Date();
@@ -84,7 +112,11 @@ export default function You() {
         return `${Math.floor(hours / 24)}d ago`;
     };
 
-    const sortedUpcoming: any[] = [];
+    const sortedUpcoming: any[] = useMemo(() => joinedEvents, [joinedEvents]);
+
+    if (isLoading) {
+        return (<View style={styles.loadingContainer}><LoadingSpinner size="lg" /></View>);
+    }
 
     // Helper function to get time category for section headers
     const getTimeCategory = (eventTime: Date) => {
@@ -266,7 +298,7 @@ export default function You() {
                                                         return (
                                                             <TouchableOpacity
                                                                 key={event.id}
-                                                                //onPress={() => navigation.navigate('EventDetail', { eventId: event.id })}
+                                                                onPress={() => navigation.navigate('EventDetail', { id: String(event.id) })}
                                                                 style={styles.eventCard}
                                                                 activeOpacity={0.8}
                                                             >
@@ -410,11 +442,9 @@ export default function You() {
                                         {searchQuery ? 'No events found' : 'No events found'}
                                     </Text>
                                     <Text style={styles.emptyStateSubtitle}>
-                                        {searchQuery ? (
-                                            <>No events match "{searchQuery}". Try a different search term.</>
-                                        ) : (
-                                            'You haven\'t joined any events yet'
-                                        )}
+                                        {searchQuery
+                                            ? `No events match "${searchQuery}". Try a different search term.`
+                                            : "You haven't joined any events yet"}
                                     </Text>
                                     {searchQuery ? (
                                         <Button
@@ -440,7 +470,7 @@ export default function You() {
                                     {filteredEvents.map((event) => (
                                         <TouchableOpacity
                                             key={event.id}
-                                            //onPress={() => navigation.navigate('EventDetail', { eventId: event.id })}
+                                            onPress={() => navigation.navigate('EventDetail', { id: String(event.id) })}
                                             style={styles.eventCard}
                                             activeOpacity={0.8}
                                         >
@@ -555,15 +585,13 @@ export default function You() {
                                                     : 'No events found'}
                                     </Text>
                                     <Text style={styles.emptyStateSubtitle}>
-                                        {searchQuery ? (
-                                            <>No events match "{searchQuery}". Try a different search term.</>
-                                        ) : activeFilter === 'saved' ? (
-                                            'Save events you\'re interested in to view them later'
-                                        ) : activeFilter === 'liked' ? (
-                                            'Like events to keep track of ones you enjoyed'
-                                        ) : (
-                                            'Browse events to discover new experiences'
-                                        )}
+                                        {searchQuery
+                                            ? `No events match "${searchQuery}". Try a different search term.`
+                                            : activeFilter === 'saved'
+                                                ? "Save events you're interested in to view them later"
+                                                : activeFilter === 'liked'
+                                                    ? 'Like events to keep track of ones you enjoyed'
+                                                    : 'Browse events to discover new experiences'}
                                     </Text>
                                     {searchQuery ? (
                                         <Button
