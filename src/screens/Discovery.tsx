@@ -1,12 +1,12 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
-  ScrollView,
   Image,
   TouchableOpacity,
   StyleSheet,
   Dimensions,
+  FlatList,
 } from "react-native";
 import { Image as RNImage } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -15,6 +15,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/types";
 import { eventsService } from "../services/events";
+import EventDiscoverCard from "../components/EventDiscoverCard";
 
 const windowWidth = Dimensions.get("window").width;
 const GRID_ITEM_WIDTH = (windowWidth - 24) / 2;
@@ -31,7 +32,11 @@ export default function Discovery() {
     (async () => {
       try {
         const res = await eventsService.browse();
-        const list = Array.isArray(res) ? res : (res && (res as any).items ? (res as any).items : []);
+        const list = Array.isArray(res)
+          ? res
+          : res && (res as any).items
+          ? (res as any).items
+          : [];
         setItems(list);
       } catch (error) {
         console.error("Error loading events:", error);
@@ -85,93 +90,44 @@ export default function Discovery() {
         <View style={styles.headerRight}></View>
       </View>
 
-      <ScrollView
-        contentContainerStyle={[
-          styles.gridContainer,
-          { paddingTop: 140 + insets.top, paddingBottom: 16 + insets.bottom },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
-        {isLoading ? (
-          <View style={styles.empty}>
-            <Text style={styles.emptyText}>Loading…</Text>
-          </View>
-        ) : items.length === 0 ? (
-          <View style={styles.empty}>
-            <Text style={styles.emptyText}>No events to discover</Text>
-          </View>
-        ) : (
-          <View>
-            {items.map((event, index) => {
-              const dateStr = event.startTime
-                ? new Date(event.startTime).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                  })
-                : "";
-              const category =
-                Array.isArray(event.aiNormalized?.categories) &&
-                event.aiNormalized.categories.length > 0
-                  ? event.aiNormalized.categories[0]
-                  : undefined;
-              return (
-                <TouchableOpacity
-                  key={event.id || index}
-                  onPress={() =>
-                    navigation.navigate(
-                      "EventDetail" as never,
-                      { id: String(event.id) } as never
-                    )
-                  }
-                  style={styles.gridItem}
-                  activeOpacity={0.8}
-                >
-                  <Image
-                    source={{
-                      uri:
-                        event.imageUrl ||
-                        `https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400&h=600&fit=crop&crop=center`,
-                    }}
-                    style={styles.gridItemImage}
-                    resizeMode="cover"
-                    onError={(error) => console.log("Image load error:", error)}
-                  />
-                  <LinearGradient
-                    colors={[
-                      "transparent",
-                      "rgba(0,0,0,0.3)",
-                      "rgba(0,0,0,0.8)",
-                    ]}
-                    style={styles.gridItemGradient}
-                  />
-                  <View style={styles.gridItemInfoTop}>
-                    {dateStr ? (
-                      <View style={styles.dateBadge}>
-                        <Text style={styles.dateBadgeText}>{dateStr}</Text>
-                      </View>
-                    ) : null}
-                    {category && (
-                      <View style={styles.catBadge}>
-                        <Text style={styles.catBadgeText}>{category}</Text>
-                      </View>
-                    )}
-                  </View>
-                  <View style={styles.gridItemInfo}>
-                    <Text numberOfLines={2} style={styles.eventTitle}>
-                      {event.title || "Untitled Event"}
-                    </Text>
-                    {event.venue && (
-                      <Text numberOfLines={1} style={styles.eventVenue}>
-                        {event.venue}
-                      </Text>
-                    )}
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        )}
-      </ScrollView>
+      {isLoading ? (
+        <View style={styles.empty}>
+          <Text style={styles.emptyText}>Loading…</Text>
+        </View>
+      ) : items.length === 0 ? (
+        <View style={styles.empty}>
+          <Text style={styles.emptyText}>No events to discover</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={items}
+          keyExtractor={(it: any, idx) => String(it.id ?? idx)}
+          numColumns={2}
+          columnWrapperStyle={{
+            justifyContent: "space-between",
+            paddingHorizontal: 12,
+            gap: 8,
+          }}
+          contentContainerStyle={{
+            paddingTop: 30 + insets.top,
+            paddingBottom: 16 + insets.bottom,
+          }}
+          renderItem={({ item }) => (
+            <EventDiscoverCard
+              event={item}
+              onPress={() =>
+                navigation.navigate(
+                  "EventDetail" as never,
+                  { id: String(item.id) } as never
+                )
+              }
+              style={{ width: GRID_ITEM_WIDTH, marginBottom: 12 }}
+            />
+          )}
+          showsVerticalScrollIndicator={false}
+          removeClippedSubviews
+        />
+      )}
     </View>
   );
 }
@@ -230,12 +186,12 @@ const styles = StyleSheet.create({
     position: "relative",
     backgroundColor: "rgba(40,40,40,1)",
   },
-  gridItemImage: { 
-    ...StyleSheet.absoluteFillObject, 
+  gridItemImage: {
+    ...StyleSheet.absoluteFillObject,
     borderRadius: 16,
     backgroundColor: "rgba(40,40,40,1)",
   },
-  gridItemGradient: { 
+  gridItemGradient: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: 16,
   },
