@@ -14,4 +14,5 @@ export type RootStackParamList = {
   Privacy: undefined;
   EventDetail: { id: string };
   EventChat: { id: string };
+  EventLobby: { id: string };
 };
