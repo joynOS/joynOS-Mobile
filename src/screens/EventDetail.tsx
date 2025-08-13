@@ -15,7 +15,16 @@ import {
 import * as WebBrowser from "expo-web-browser";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RouteProp, useRoute, useNavigation } from "@react-navigation/native";
-import { ArrowLeft, Clock, Bookmark, MessageCircle } from "lucide-react-native";
+import {
+  ArrowLeft,
+  Clock,
+  Bookmark,
+  MessageCircle,
+  ChevronDown,
+  CheckCircle2,
+  Calendar,
+} from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import type { RootStackParamList } from "../navigation/types";
 import { eventsService } from "../services/events";
 import type { EventDetail as EventDetailType } from "../types/api";
@@ -42,6 +51,8 @@ export default function EventDetail() {
   const [messages, setMessages] = useState<any[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [booking, setBooking] = useState<any>(null);
+  const [isPlanExpanded, setIsPlanExpanded] = useState<boolean>(false);
+  const [isBookingExpanded, setIsBookingExpanded] = useState<boolean>(false);
 
   useEffect(() => {
     loadEventData();
@@ -64,11 +75,13 @@ export default function EventDetail() {
         try {
           const bookingInfo = await eventsService.bookingInfo(id);
           setBooking(bookingInfo);
-          if (bookingInfo && bookingInfo.isBooked) {
-            setCurrentState("BOOKED");
+          if (!data.selectedPlanId && bookingInfo?.selectedPlan?.id) {
+            setSelectedPlanId(bookingInfo.selectedPlan.id);
           }
-          if (bookingInfo && bookingInfo.isCommitted) {
+          if (bookingInfo?.isCommitted) {
             setCurrentState("COMMITTED");
+          } else if (bookingInfo?.isBooked) {
+            setCurrentState("BOOKED");
           } else {
             setCurrentState("VOTING_CLOSED");
           }
@@ -210,6 +223,20 @@ export default function EventDetail() {
   };
 
   const selectedPlan = plans.find((p) => p.id === selectedPlanId);
+  const participantsById: Record<string, any> = Object.fromEntries(
+    (event.participants || []).map((p) => [p.id, p])
+  );
+
+  const timeAgo = (iso?: string) => {
+    if (!iso) return "";
+    const diffMs = Date.now() - new Date(iso).getTime();
+    const mins = Math.max(0, Math.floor(diffMs / 60000));
+    if (mins < 1) return "just now";
+    if (mins === 1) return "1 min ago";
+    if (mins < 60) return `${mins} min ago`;
+    const hours = Math.floor(mins / 60);
+    return hours === 1 ? "1 hr ago" : `${hours} hrs ago`;
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-black">
@@ -305,6 +332,172 @@ export default function EventDetail() {
             insets.bottom + (currentState !== "PRE_JOIN" ? 160 : 100),
         }}
       >
+        {/* Step Cards */}
+        {(currentState === "VOTING_CLOSED" ||
+          currentState === "BOOKED" ||
+          currentState === "COMMITTED" ||
+          currentState === "CANT_MAKE_IT") && (
+          <View className="mb-4">
+            {/* Selected Plan */}
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={() => setIsPlanExpanded((s) => !s)}
+              className="rounded-3xl overflow-hidden mb-3"
+            >
+              <LinearGradient
+                colors={["#2a1a12", "#6b3b18"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{ padding: 16, borderRadius: 24 }}
+              >
+                <View className="flex-row items-center">
+                  <View className="w-10 h-10 rounded-full bg-black/30 items-center justify-center mr-3">
+                    <CheckCircle2 size={20} color="#ffb05a" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-white font-semibold text-base">
+                      Selected Plan
+                    </Text>
+                    <Text className="text-amber-400 text-sm">
+                      {selectedPlan
+                        ? `${selectedPlan.title}`
+                        : "Awaiting final plan"}
+                    </Text>
+                  </View>
+                  <ChevronDown
+                    size={18}
+                    color="white"
+                    style={{
+                      transform: [
+                        { rotate: isPlanExpanded ? "180deg" : "0deg" },
+                      ],
+                    }}
+                  />
+                </View>
+
+                {isPlanExpanded && selectedPlan && (
+                  <View className="mt-4">
+                    <View className="flex-row items-start">
+                      <Text className="text-2xl mr-3">
+                        {selectedPlan.emoji || "✨"}
+                      </Text>
+                      <View className="flex-1">
+                        <Text className="text-white font-semibold mb-1">
+                          {selectedPlan.title}
+                        </Text>
+                        <Text className="text-white/80 text-sm">
+                          {selectedPlan.description}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
+
+            {/* Book Your Spot */}
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={() => setIsBookingExpanded((s) => !s)}
+              className="rounded-3xl overflow-hidden"
+              style={{
+                backgroundColor: "#121212",
+                borderWidth: 1,
+                borderColor: "rgba(255,255,255,0.06)",
+              }}
+            >
+              <View className="p-4">
+                <View className="flex-row items-center">
+                  {booking?.isBooked ? (
+                    <View className="w-10 h-10 rounded-full bg-green-500/20 items-center justify-center mr-3">
+                      <CheckCircle2 size={20} color="#22c55e" />
+                    </View>
+                  ) : (
+                    <View className="w-10 h-10 rounded-full bg-amber-500/20 items-center justify-center mr-3">
+                      <Calendar size={20} color="#ffcc66" />
+                    </View>
+                  )}
+                  <View className="flex-1">
+                    <Text className="text-white font-semibold text-base">
+                      Book Your Spot
+                    </Text>
+                    <Text className={`${booking?.isBooked ? "text-green-400" : "text-amber-400"} text-sm`}>
+                      {booking?.isBooked
+                        ? "Reservation confirmed"
+                        : "Reservation required"}
+                    </Text>
+                  </View>
+                  <ChevronDown
+                    size={18}
+                    color="white"
+                    style={{
+                      transform: [
+                        { rotate: isBookingExpanded ? "180deg" : "0deg" },
+                      ],
+                    }}
+                  />
+                </View>
+
+                {isBookingExpanded && (
+                  <View className="mt-4">
+                    <View className="bg-white/5 rounded-xl p-4 mb-3">
+                      <Text className="text-white font-semibold mb-2">
+                        Reserve Your Table at {event.venue}
+                      </Text>
+                      <Text className="text-white/70 text-sm">
+                        Party size: {event.interestedCount} • Time:{" "}
+                        {formatTime(event.startTime)}
+                      </Text>
+                    </View>
+                    {booking?.isBooked ? (
+                      <View className="flex-row gap-3">
+                        {booking?.externalBookingUrl ? (
+                          <TouchableOpacity
+                            onPress={handleBooking}
+                            className="flex-1 bg-white/10 py-3 rounded-xl border border-white/20"
+                          >
+                            <Text className="text-white text-center font-semibold">
+                              Open Ticket
+                            </Text>
+                          </TouchableOpacity>
+                        ) : null}
+                        <View
+                          className="flex-1 py-3 rounded-xl items-center justify-center"
+                          style={{
+                            borderWidth: 1,
+                            borderColor: "rgba(34,197,94,0.5)",
+                            backgroundColor: "rgba(34,197,94,0.08)",
+                          }}
+                        >
+                          <Text className="text-green-400 font-semibold">All set</Text>
+                        </View>
+                      </View>
+                    ) : (
+                      <View className="flex-row gap-3">
+                        <TouchableOpacity
+                          onPress={handleBooking}
+                          className="flex-1 bg-amber-500 py-3 rounded-xl"
+                        >
+                          <Text className="text-black text-center font-semibold">
+                            Book Now
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={handleBookingConfirm}
+                          className="flex-1 bg-white/10 py-3 rounded-xl border border-white/20"
+                        >
+                          <Text className="text-white text-center font-semibold">
+                            Already Booked
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
+                )}
+              </View>
+            </TouchableOpacity>
+          </View>
+        )}
         {/* Vibe Analysis */}
         <View className="bg-white/5 rounded-xl p-4 mb-4">
           <Text className="text-white text-lg font-semibold mb-2">
@@ -464,57 +657,7 @@ export default function EventDetail() {
           </View>
         )}
 
-        {/* Selected Plan - Voting Closed */}
-        {(currentState === "VOTING_CLOSED" || currentState === "BOOKED") &&
-          selectedPlan && (
-            <View className="bg-white/5 rounded-xl p-4 mb-4">
-              <Text className="text-green-400 text-base font-semibold mb-2">
-                ✓ Selected Plan: {selectedPlan.emoji} {selectedPlan.title}
-              </Text>
-              <Text className="text-white/60 text-sm">
-                Status: Voting complete
-              </Text>
-            </View>
-          )}
-
-        {/* Booking Section - Voting Closed */}
-        {currentState === "VOTING_CLOSED" && (
-          <View className="bg-white/5 rounded-xl p-4 mb-4">
-            <Text className="text-white text-lg font-semibold mb-3">
-              Book Your Spot
-            </Text>
-            <View className="bg-white/5 rounded-lg p-4 mb-4">
-              <Text className="text-white font-semibold mb-2">
-                Reserve Your Table at {event.venue}
-              </Text>
-              <Text className="text-white/80 text-sm mb-3">
-                Ensures a table ready for our group.
-              </Text>
-              <Text className="text-white/60 text-sm">
-                Party size: {event.interestedCount} • Time:{" "}
-                {formatTime(event.startTime)} • Date: Tonight
-              </Text>
-            </View>
-            <View className="flex-row gap-3">
-              <TouchableOpacity
-                onPress={handleBooking}
-                className="flex-1 bg-green-500 py-3 rounded-lg"
-              >
-                <Text className="text-white text-center font-semibold">
-                  Book Now
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleBookingConfirm}
-                className="flex-1 bg-white/10 py-3 rounded-lg border border-white/20"
-              >
-                <Text className="text-white text-center font-semibold">
-                  Already Booked
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
+        {/* Old Selected Plan + Booking sections replaced by step cards */}
 
         {/* Reservation Status - Booked */}
         {currentState === "BOOKED" && (
@@ -534,31 +677,78 @@ export default function EventDetail() {
           currentState === "BOOKED" ||
           currentState === "COMMITTED" ||
           currentState === "CANT_MAKE_IT") && (
-          <View className="bg-white/5 rounded-xl p-4 mb-4">
-            <Text className="text-white text-lg font-semibold mb-3">Chat</Text>
-            <View className="max-h-64">
-              <ScrollView showsVerticalScrollIndicator={false}>
-                {messages.length === 0 ? (
-                  <Text className="text-white/60 text-center py-4">
-                    No messages yet
-                  </Text>
-                ) : (
-                  messages.map((message, index) => (
-                    <View key={message.id || index} className="mb-2">
-                      <Text className="text-white/80 text-sm">
-                        <Text className="font-semibold">
-                          {message.isMe
-                            ? "You"
-                            : message.user?.name || "System"}
+          <View className="mb-4">
+            {messages.length === 0 ? (
+              <View className="bg-white/5 rounded-xl p-4">
+                <Text className="text-white/60 text-center py-4">
+                  No messages yet
+                </Text>
+              </View>
+            ) : (
+              messages.map((m, idx) => {
+                const participant = m.userId
+                  ? participantsById[m.userId]
+                  : undefined;
+                const displayName = m.isMe
+                  ? "You"
+                  : participant?.name || m.user?.name || "Guest";
+                const status = participant?.status;
+                const isCantMakeIt = status === "CANT_MAKE_IT";
+                return (
+                  <View key={m.id || idx} className="flex-row mb-5 items-start">
+                    {participant?.avatar ? (
+                      <Image
+                        source={{ uri: participant.avatar }}
+                        className="w-10 h-10 rounded-full mr-3"
+                      />
+                    ) : (
+                      <View className="w-10 h-10 rounded-full bg-white/10 items-center justify-center mr-3">
+                        <Text className="text-white font-semibold">
+                          {String(displayName).charAt(0).toUpperCase()}
                         </Text>
-                        {": "}
-                        {message.text}
-                      </Text>
+                      </View>
+                    )}
+                    <View className="flex-1">
+                      <View className="flex-row items-center mb-2">
+                        <Text className="text-white font-semibold mr-2">
+                          {displayName}
+                        </Text>
+                        {status === "COMMITTED" && (
+                          <View className="flex-row items-center mr-2">
+                            <View className="w-2 h-2 rounded-full bg-orange-400 mr-1" />
+                            <Text className="text-orange-300 text-xs">
+                              Committed
+                            </Text>
+                          </View>
+                        )}
+                        {status === "CANT_MAKE_IT" && (
+                          <View className="flex-row items-center mr-2">
+                            <View className="w-2 h-2 rounded-full bg-red-500 mr-1" />
+                            <Text className="text-red-400 text-xs">
+                              Can't make it
+                            </Text>
+                          </View>
+                        )}
+                        <Text className="text-white/40 text-xs">
+                          {timeAgo(m.createdAt)}
+                        </Text>
+                      </View>
+                      <View
+                        className={`rounded-2xl p-4 ${
+                          isCantMakeIt
+                            ? "bg-red-500/10 border border-red-500/40"
+                            : "bg-transparent border border-white/30"
+                        }`}
+                      >
+                        <Text className="text-white/90 text-base">
+                          {m.text}
+                        </Text>
+                      </View>
                     </View>
-                  ))
-                )}
-              </ScrollView>
-            </View>
+                  </View>
+                );
+              })
+            )}
           </View>
         )}
       </ScrollView>
