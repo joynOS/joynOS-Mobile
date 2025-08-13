@@ -3,7 +3,7 @@ import { View, Text, Image, SafeAreaView, ScrollView, TouchableOpacity, StatusBa
 import * as WebBrowser from "expo-web-browser";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
-import { Clock, MessageCircle, CheckCircle2, Calendar, ArrowLeft, MoreHorizontal, ChevronDown } from "lucide-react-native";
+import { Clock, MessageCircle, CheckCircle2, Calendar, ArrowLeft, MoreHorizontal, ChevronDown, Users } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { RootStackParamList } from "../navigation/types";
@@ -227,18 +227,22 @@ export default function EventLobby() {
     <SafeAreaView className="flex-1 bg-black">
       <StatusBar barStyle="light-content" />
 
-      {/* Header as per design: back, title, more on the same row */}
+      {/* Header as per design: back, title, more; with attendee count below */}
       <View className="px-4 pt-3 pb-2">
-        <View className="flex-row items-center justify-between">
-          <View className="flex-row items-center gap-3">
-            <TouchableOpacity onPress={() => navigation.goBack()} className="w-9 h-9 rounded-full items-center justify-center">
-              <ArrowLeft size={20} color="white" />
-            </TouchableOpacity>
-            <Text className="text-white text-2xl font-bold" numberOfLines={1}>{event.title}</Text>
-          </View>
-          <TouchableOpacity className="w-9 h-9 rounded-full items-center justify-center">
+        <View className="flex-row items-center">
+          <TouchableOpacity onPress={() => navigation.goBack()} className="w-9 h-9 rounded-full items-center justify-center mr-2">
+            <ArrowLeft size={20} color="white" />
+          </TouchableOpacity>
+          <Text className="text-white text-2xl font-bold flex-1" numberOfLines={1}>
+            {event.title}
+          </Text>
+          <TouchableOpacity className="w-9 h-9 rounded-full items-center justify-center ml-2">
             <MoreHorizontal size={20} color="white" />
           </TouchableOpacity>
+        </View>
+        <View className="mt-1 flex-row items-center">
+          <Users size={16} color="rgba(255,255,255,0.6)" />
+          <Text className="text-white/60 ml-1">{event.interestedCount ?? 0}</Text>
         </View>
       </View>
 
