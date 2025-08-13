@@ -43,7 +43,6 @@ export default function EventDetail() {
   const [chatInput, setChatInput] = useState("");
   const [booking, setBooking] = useState<any>(null);
 
-  // Load event data
   useEffect(() => {
     loadEventData();
   }, [id]);
@@ -218,9 +217,7 @@ export default function EventDetail() {
       <View className="relative">
         <Image
           source={{
-            uri:
-              event.imageUrl ||
-              "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
+            uri: event.imageUrl || "",
           }}
           className="w-full h-64"
           resizeMode="cover"
@@ -237,12 +234,12 @@ export default function EventDetail() {
           </TouchableOpacity>
 
           <View className="flex-row gap-2">
-            <View className="bg-green-500 px-2 py-2 rounded-full w-[35px] h-[35px] items-center justify-center">
+            <View className="bg-green-500 py-2 rounded-full w-[45px] h-[45px] items-center justify-center">
               <Text className="text-white font-semibold text-xs">
                 {vibeScore}%
               </Text>
             </View>
-            <TouchableOpacity className="w-[35px] h-[35px] bg-black/50 rounded-full items-center justify-center border border-white/20">
+            <TouchableOpacity className="w-[45px] h-[45px] bg-black/50 rounded-full items-center justify-center border border-white/20">
               <Bookmark size={20} color="white" />
             </TouchableOpacity>
           </View>
