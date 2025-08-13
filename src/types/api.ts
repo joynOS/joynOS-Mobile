@@ -134,6 +134,7 @@ export type BookingInfo = {
   externalBookingUrl: string | null;
   selectedPlan: EventPlan | null;
   isBooked: boolean;
+  isCommitted: boolean;
 };
 
 export type ChatItem = {

@@ -66,6 +66,9 @@ export default function EventDetail() {
           setBooking(bookingInfo);
           if (bookingInfo && bookingInfo.isBooked) {
             setCurrentState("BOOKED");
+          }
+          if (bookingInfo && bookingInfo.isCommitted) {
+            setCurrentState("COMMITTED");
           } else {
             setCurrentState("VOTING_CLOSED");
           }
