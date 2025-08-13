@@ -81,7 +81,6 @@ const TimelineEventCard: React.FC<Props> = ({
 }) => {
   const title = event.title || "Untitled Event";
   const venue = event.venue || "Location TBD";
-  console.log("event: ", JSON.stringify(event, null, 2));
   const dateLine = useMemo(
     () => formatDateTime(event.startTime),
     [event.startTime]
@@ -100,7 +99,7 @@ const TimelineEventCard: React.FC<Props> = ({
       : event.status === "interested"
       ? "Interested"
       : "Attended";
-  const vibe = Math.max(70, Math.min(99, Math.floor(event.vibeScore ?? 85)));
+  const vibe = event?.vibeScore || 0;
 
   return (
     <TouchableOpacity
@@ -137,13 +136,13 @@ const TimelineEventCard: React.FC<Props> = ({
           <View className="bg-black/60 px-2.5 py-1.5 rounded-xl">
             <Text className="text-white font-bold text-xs">{vibe}%</Text>
           </View>
-          {event.vibeMatchScoreWithOtherUsers && (
+          {/* {event.vibeMatchScoreWithOtherUsers && (
             <View className="bg-green-500/20 px-2.5 py-1 rounded-xl">
               <Text className="text-green-400 font-semibold text-xs">
                 {event.vibeMatchScoreWithOtherUsers}% match
               </Text>
             </View>
-          )}
+          )} */}
         </View>
       </View>
 
