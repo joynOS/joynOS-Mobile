@@ -3,7 +3,8 @@ import { View, Text, Image, SafeAreaView, ScrollView, TouchableOpacity, StatusBa
 import * as WebBrowser from "expo-web-browser";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
-import { Clock, MessageCircle, CheckCircle2, Calendar } from "lucide-react-native";
+import { Clock, MessageCircle, CheckCircle2, Calendar, ArrowLeft, MoreHorizontal, ChevronDown } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { RootStackParamList } from "../navigation/types";
 import { eventsService } from "../services/events";
@@ -226,41 +227,121 @@ export default function EventLobby() {
     <SafeAreaView className="flex-1 bg-black">
       <StatusBar barStyle="light-content" />
 
-      {/* Top chips row like the design (no big header image) */}
-      <View className="px-4 pt-3 pb-2 flex-row items-center justify-between">
-        <Text className="text-white/80">👥 {event.interestedCount ?? 0}</Text>
+      {/* Header as per design: back, title, more on the same row */}
+      <View className="px-4 pt-3 pb-2">
+        <View className="flex-row items-center justify-between">
+          <View className="flex-row items-center gap-3">
+            <TouchableOpacity onPress={() => navigation.goBack()} className="w-9 h-9 rounded-full items-center justify-center">
+              <ArrowLeft size={20} color="white" />
+            </TouchableOpacity>
+            <Text className="text-white text-2xl font-bold" numberOfLines={1}>{event.title}</Text>
+          </View>
+          <TouchableOpacity className="w-9 h-9 rounded-full items-center justify-center">
+            <MoreHorizontal size={20} color="white" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: insets.bottom + 160 }}>
-        {/* Chips */}
-        <View className="flex-row gap-3 mb-5">
-          {/* Selected Plan chip */}
-          <View className="flex-1 rounded-3xl border border-white/10 bg-[#1a1410] p-4">
-            <View className="flex-row items-center">
-              <View className="w-9 h-9 rounded-full bg-black/30 items-center justify-center mr-3">
-                <CheckCircle2 size={18} color="#ffb05a" />
+        {/* Steps accordions */}
+        <View className="mb-5">
+          {/* Selected Plan */}
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() => setIsPlanExpanded((s) => !s)}
+            className="rounded-3xl overflow-hidden mb-3"
+          >
+            <LinearGradient
+              colors={["#2a1a12", "#6b3b18"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{ padding: 16, borderRadius: 24 }}
+            >
+              <View className="flex-row items-center">
+                <View className="w-10 h-10 rounded-full bg-black/30 items-center justify-center mr-3">
+                  <CheckCircle2 size={20} color="#ffb05a" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-white font-semibold text-base">Selected Plan</Text>
+                  <Text className="text-amber-400 text-sm">
+                    {currentState === "VOTING_OPEN" ? "Voting in progress" : "Voting complete"}
+                  </Text>
+                </View>
+                <ChevronDown size={18} color="white" style={{ transform: [{ rotate: isPlanExpanded ? "180deg" : "0deg" }] }} />
               </View>
-              <View className="flex-1">
-                <Text className="text-white font-semibold" numberOfLines={1}>{selectedPlan?.title || "Selected Plan"}</Text>
-                <Text className="text-amber-400 text-xs">{currentState === "VOTING_OPEN" ? "Voting in progress" : "Voting complete"}</Text>
-              </View>
-            </View>
-          </View>
 
-          {/* Reservation chip */}
-          <View className="flex-1 rounded-3xl border border-white/10 bg-[#1a1410] p-4">
-            <View className="flex-row items-center">
-              <View className="w-9 h-9 rounded-full bg-black/30 items-center justify-center mr-3">
-                <Calendar size={18} color="#ffb05a" />
+              {isPlanExpanded && selectedPlan && (
+                <View className="mt-4">
+                  <View className="flex-row items-start">
+                    <Text className="text-2xl mr-3">{selectedPlan.emoji || "✨"}</Text>
+                    <View className="flex-1">
+                      <Text className="text-white font-semibold mb-1">{selectedPlan.title}</Text>
+                      <Text className="text-white/80 text-sm">{selectedPlan.description}</Text>
+                    </View>
+                  </View>
+                </View>
+              )}
+            </LinearGradient>
+          </TouchableOpacity>
+
+          {/* Book Your Spot */}
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() => setIsBookingExpanded((s) => !s)}
+            className="rounded-3xl overflow-hidden"
+            style={{ backgroundColor: "#121212", borderWidth: 1, borderColor: "rgba(255,255,255,0.06)" }}
+          >
+            <View className="p-4">
+              <View className="flex-row items-center">
+                {booking?.isBooked ? (
+                  <View className="w-10 h-10 rounded-full bg-green-500/20 items-center justify-center mr-3">
+                    <CheckCircle2 size={20} color="#22c55e" />
+                  </View>
+                ) : (
+                  <View className="w-10 h-10 rounded-full bg-amber-500/20 items-center justify-center mr-3">
+                    <Calendar size={20} color="#ffcc66" />
+                  </View>
+                )}
+                <View className="flex-1">
+                  <Text className="text-white font-semibold text-base">Book Your Spot</Text>
+                  <Text className={`${booking?.isBooked ? "text-green-400" : "text-amber-400"} text-sm`}>
+                    {booking?.isBooked ? "Reservation confirmed" : "Reservation required"}
+                  </Text>
+                </View>
+                <ChevronDown size={18} color="white" style={{ transform: [{ rotate: isBookingExpanded ? "180deg" : "0deg" }] }} />
               </View>
-              <View className="flex-1">
-                <Text className="text-white font-semibold" numberOfLines={1}>Reservation</Text>
-                <Text className={`${booking?.isBooked ? "text-green-400" : "text-amber-400"} text-xs`}>
-                  {booking?.isBooked ? "All set for tonight" : "Reservation required"}
-                </Text>
-              </View>
+
+              {isBookingExpanded && (
+                <View className="mt-4">
+                  <View className="bg-white/5 rounded-xl p-4 mb-3">
+                    <Text className="text-white font-semibold mb-2">Reserve Your Table at {event.venue}</Text>
+                    <Text className="text-white/70 text-sm">Party size: {event.interestedCount} • Time: {formatTime(event.startTime)}</Text>
+                  </View>
+                  {booking?.isBooked ? (
+                    <View className="flex-row gap-3">
+                      {booking?.externalBookingUrl ? (
+                        <TouchableOpacity onPress={handleBooking} className="flex-1 bg-white/10 py-3 rounded-xl border border-white/20">
+                          <Text className="text-white text-center font-semibold">Open Ticket</Text>
+                        </TouchableOpacity>
+                      ) : null}
+                      <View className="flex-1 py-3 rounded-xl items-center justify-center" style={{ borderWidth: 1, borderColor: "rgba(34,197,94,0.5)", backgroundColor: "rgba(34,197,94,0.08)" }}>
+                        <Text className="text-green-400 font-semibold">All set</Text>
+                      </View>
+                    </View>
+                  ) : (
+                    <View className="flex-row gap-3">
+                      <TouchableOpacity onPress={handleBooking} className="flex-1 bg-amber-500 py-3 rounded-xl">
+                        <Text className="text-black text-center font-semibold">Book Now</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={handleBookingConfirm} className="flex-1 bg-white/10 py-3 rounded-xl border border-white/20">
+                        <Text className="text-white text-center font-semibold">Already Booked</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+              )}
             </View>
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* Voting Section when open */}
