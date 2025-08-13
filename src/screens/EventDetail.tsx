@@ -87,7 +87,6 @@ export default function EventDetail() {
     }
   };
 
-  // Voting countdown timer
   useEffect(() => {
     if (currentState !== "VOTING_OPEN" || !event?.votingEndsAt) return;
 

@@ -38,6 +38,8 @@ http.interceptors.request.use(async (config) => {
   if (!isAuthRequest) {
     const token = await tokenStorage.getAccessToken();
     if (token) {
+      // console um curl dos endpoints com token e tudo
+      console.log("curl: ", `curl -X ${config.method?.toUpperCase()} ${BASE_URL}${config.url} -H "Authorization: Bearer ${token}"`);
       config.headers = config.headers ?? {};
       config.headers.Authorization = `Bearer ${token}`;
     }

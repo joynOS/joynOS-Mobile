@@ -1,6 +1,5 @@
-import React, { memo, useMemo } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import React, { memo, useMemo } from "react";
+import { View, Text, Image, TouchableOpacity } from "react-native";
 
 type TimelineEvent = {
   id: string | number;
@@ -8,122 +7,203 @@ type TimelineEvent = {
   imageUrl?: string | null;
   venue?: string | null;
   startTime?: string | Date;
-  status?: 'attending' | 'interested' | 'attended';
+  status?: "attending" | "interested" | "attended";
   vibeScore?: number;
+  vibeMatchScoreWithOtherUsers?: number;
   userRating?: number;
   attendees?: number;
   maxAttendees?: number;
+  lastMessage?: string;
+  unreadCount?: number;
 };
 
 type Props = {
   event: TimelineEvent;
   onPress: () => void;
-  style?: ViewStyle;
+  className?: string;
 };
 
 const formatDateTime = (dt?: string | Date) => {
-  if (!dt) return '';
-  const d = typeof dt === 'string' ? new Date(dt) : dt;
-  return d.toLocaleString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
+  if (!dt) return "";
+  const d = typeof dt === "string" ? new Date(dt) : dt;
+  return d.toLocaleString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
     hour12: true,
   });
 };
 
-const TimelineEventCard: React.FC<Props> = ({ event, onPress, style }) => {
-  const title = event.title || 'Untitled Event';
-  const venue = event.venue || '';
-  const dateLine = useMemo(() => formatDateTime(event.startTime), [event.startTime]);
-  const image = event.imageUrl ?? "";
-  const statusLabel = event.status === 'attending' ? 'Joined' : event.status === 'interested' ? 'Interested' : 'Attended';
-  const vibe = Math.max(70, Math.min(99, Math.floor(event.vibeScore ?? 88)));
+const getTimeUntilEvent = (startTime?: string | Date) => {
+  if (!startTime) return "";
+  const startDate = new Date(startTime);
+  if (isNaN(startDate.getTime())) return "";
+
+  const now = new Date();
+  const diff = startDate.getTime() - now.getTime();
+
+  if (diff < 0) return "Past";
+
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const days = Math.floor(hours / 24);
+
+  if (days > 0) return `${days}d ${hours % 24}h`;
+  if (hours > 0) return `${hours}h`;
+  return `${Math.floor(diff / (1000 * 60))}m`;
+};
+
+const getEventStatus = (startTime?: string | Date, endTime?: string | Date) => {
+  if (!startTime) return { label: "Upcoming", color: "text-green-400" };
+
+  const now = new Date();
+  const eventStart = new Date(startTime);
+  const eventEnd = endTime ? new Date(endTime) : null;
+
+  if (now < eventStart) {
+    const hoursUntil =
+      (eventStart.getTime() - now.getTime()) / (1000 * 60 * 60);
+    if (hoursUntil <= 2)
+      return { label: "Starting soon", color: "text-yellow-400" };
+    return { label: "Upcoming", color: "text-green-400" };
+  } else if (eventEnd && now >= eventStart && now <= eventEnd) {
+    return { label: "Live now", color: "text-red-400" };
+  } else {
+    return { label: "Completed", color: "text-white/60" };
+  }
+};
+
+const TimelineEventCard: React.FC<Props> = ({
+  event,
+  onPress,
+  className = "",
+}) => {
+  const title = event.title || "Untitled Event";
+  const venue = event.venue || "Location TBD";
+  console.log("event: ", JSON.stringify(event, null, 2));
+  const dateLine = useMemo(
+    () => formatDateTime(event.startTime),
+    [event.startTime]
+  );
+  const timeUntil = useMemo(
+    () => getTimeUntilEvent(event.startTime),
+    [event.startTime]
+  );
+  const status = useMemo(
+    () => getEventStatus(event.startTime),
+    [event.startTime]
+  );
+  const statusLabel =
+    event.status === "attending"
+      ? "Joined"
+      : event.status === "interested"
+      ? "Interested"
+      : "Attended";
+  const vibe = Math.max(70, Math.min(99, Math.floor(event.vibeScore ?? 85)));
 
   return (
-    <TouchableOpacity onPress={onPress} style={[styles.card, style]} activeOpacity={0.88}>
-      <Image source={{ uri: image }} style={styles.image} resizeMode="cover" />
-      <LinearGradient colors={['rgba(0,0,0,0.15)', 'rgba(0,0,0,0.6)', 'rgba(0,0,0,0.85)']} style={styles.overlay} />
+    <TouchableOpacity
+      onPress={onPress}
+      className={`relative h-56 rounded-2xl overflow-hidden bg-gray-800 mb-3 ${className}`}
+      activeOpacity={0.88}
+    >
+      <Image
+        source={{
+          uri:
+            event.imageUrl ||
+            "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
+        }}
+        className="absolute inset-0 w-full h-full"
+        resizeMode="cover"
+      />
 
-      <View style={styles.topRow}>
-        <View style={styles.titlePill}>
-          <Text style={styles.titleText} numberOfLines={1}>{title}</Text>
-          {!!venue && <Text numberOfLines={1} style={styles.venueText}>{venue}</Text>}
+      <View className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/60 to-black/90" />
+
+      <View className="absolute top-3 left-3 right-3 flex-row justify-between items-start">
+        <View className="bg-black/40 px-3 py-2 rounded-xl max-w-[60%]">
+          <Text className="text-white font-bold text-base" numberOfLines={1}>
+            {title}
+          </Text>
+          <Text className="text-white/80 text-xs mt-0.5" numberOfLines={1}>
+            {venue}
+          </Text>
         </View>
-        <View style={styles.rightChips}>
-          <View style={styles.statusChip}><Text style={styles.statusText}>{statusLabel}</Text></View>
-          <View style={styles.vibeChip}><Text style={styles.vibeChipText}>{vibe}%</Text></View>
-        </View>
-      </View>
 
-      <View style={styles.midRow}>
-        {!!dateLine && <Text style={styles.dateLine}>{dateLine}</Text>}
-      </View>
-
-      <View style={styles.bottomRow}>
-        {event.status === 'attended' && typeof event.userRating === 'number' && (
-          <View style={styles.ratingRow}>
-            <View style={styles.dotsRow}>
-              {Array.from({ length: 5 }).map((_, i) => (
-                <View key={i} style={[styles.dot, i < (event.userRating || 0) ? styles.dotOn : styles.dotOff]} />
-              ))}
-            </View>
-            <Text style={styles.ratedText}>Rated</Text>
+        <View className="items-end gap-2">
+          <View className="bg-white/10 px-3 py-1.5 rounded-full">
+            <Text className="text-white font-bold text-xs">{statusLabel}</Text>
           </View>
-        )}
-        {(typeof event.attendees === 'number' && typeof event.maxAttendees === 'number') && (
-          <Text style={styles.peopleText}>{event.attendees}/{event.maxAttendees} people</Text>
-        )}
+          <View className="bg-black/60 px-2.5 py-1.5 rounded-xl">
+            <Text className="text-white font-bold text-xs">{vibe}%</Text>
+          </View>
+          {event.vibeMatchScoreWithOtherUsers && (
+            <View className="bg-green-500/20 px-2.5 py-1 rounded-xl">
+              <Text className="text-green-400 font-semibold text-xs">
+                {event.vibeMatchScoreWithOtherUsers}% match
+              </Text>
+            </View>
+          )}
+        </View>
+      </View>
+
+      <View className="absolute left-4 right-4 top-24">
+        <Text className="text-white text-lg font-bold">{dateLine}</Text>
+      </View>
+
+      <View className="absolute left-4 right-4 bottom-3.5 flex-row justify-between items-center">
+        <View>
+          {event.status === "attended" &&
+          typeof event.userRating === "number" ? (
+            <View className="flex-row items-center gap-2">
+              <View className="flex-row gap-1.5">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <View
+                    key={i}
+                    className={`w-2.5 h-2.5 rounded-full ${
+                      i < (event.userRating || 0)
+                        ? "bg-yellow-400"
+                        : "bg-white/50"
+                    }`}
+                  />
+                ))}
+              </View>
+              <Text className="text-white font-semibold text-sm">Rated</Text>
+            </View>
+          ) : event.lastMessage ? (
+            <View className="flex-row items-center">
+              <Text
+                className="text-white/90 text-sm font-medium flex-1 mr-3"
+                numberOfLines={1}
+              >
+                {event.lastMessage}
+              </Text>
+              {(event.unreadCount || 0) > 0 && (
+                <View className="bg-green-500 px-2 py-1 rounded-full min-w-5 h-5 items-center justify-center">
+                  <Text className="text-white text-xs font-bold">
+                    {event.unreadCount}
+                  </Text>
+                </View>
+              )}
+            </View>
+          ) : (
+            <View className="flex-row items-center">
+              {typeof event.attendees === "number" &&
+                typeof event.maxAttendees === "number" && (
+                  <Text className="text-white/80 text-sm font-medium">
+                    {event.attendees}/{event.maxAttendees} people
+                  </Text>
+                )}
+            </View>
+          )}
+        </View>
+
+        <Text className={`text-sm font-semibold ${status.color}`}>
+          {timeUntil && status.label !== "Completed" ? timeUntil : status.label}
+        </Text>
       </View>
     </TouchableOpacity>
   );
 };
 
 export default memo(TimelineEventCard);
-
-const styles = StyleSheet.create({
-  card: {
-    height: 220,
-    borderRadius: 20,
-    overflow: 'hidden',
-    backgroundColor: 'rgba(40,40,40,1)',
-  },
-  image: { ...StyleSheet.absoluteFillObject },
-  overlay: { ...StyleSheet.absoluteFillObject },
-  topRow: {
-    position: 'absolute',
-    top: 10,
-    left: 12,
-    right: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  titlePill: {
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 12,
-    maxWidth: '60%',
-  },
-  titleText: { color: '#fff', fontWeight: '700', fontSize: 16 },
-  venueText: { color: 'rgba(255,255,255,0.8)', fontSize: 12, marginTop: 2 },
-  rightChips: { alignItems: 'flex-end', gap: 8 },
-  statusChip: { backgroundColor: 'rgba(255,255,255,0.12)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 },
-  statusText: { color: '#fff', fontWeight: '700' },
-  vibeChip: { backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12 },
-  vibeChipText: { color: '#fff', fontWeight: '700' },
-  midRow: { position: 'absolute', left: 16, right: 16, top: 90 },
-  dateLine: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  bottomRow: { position: 'absolute', left: 16, right: 16, bottom: 14, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  dotsRow: { flexDirection: 'row', gap: 6 },
-  dot: { width: 10, height: 10, borderRadius: 5 },
-  dotOn: { backgroundColor: '#F2C94C' },
-  dotOff: { backgroundColor: 'rgba(255,255,255,0.5)' },
-  ratedText: { color: '#fff', fontWeight: '600' },
-  peopleText: { color: 'rgba(255,255,255,0.85)', fontWeight: '600' },
-});
-
