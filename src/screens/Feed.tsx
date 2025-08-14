@@ -36,6 +36,7 @@ type IntentData = {
 };
 
 const windowWidth = Dimensions.get("window").width;
+const windowHeight = Dimensions.get("window").height;
 const GRID_ITEM_WIDTH = (windowWidth - 24) / 2;
 
 export default function Feed() {
@@ -83,12 +84,8 @@ export default function Feed() {
     { id: "discovery", label: "Discovery" },
   ];
 
-  // Calculate viewport height for snap pagination (area below header)
-  const HEADER_OFFSET = 96; // matches styles.content marginTop
-  const VIEWPORT_HEIGHT = useMemo(() => {
-    const h = Dimensions.get("window").height - HEADER_OFFSET;
-    return h > 0 ? h : Dimensions.get("window").height;
-  }, [insets.top]);
+  // Calculate viewport height for snap pagination (full screen height)
+  const VIEWPORT_HEIGHT = windowHeight;
 
   if (isLoading) {
     return (
@@ -103,11 +100,11 @@ export default function Feed() {
       {/* Gradient Overlay */}
       <LinearGradient
         colors={["rgba(0,0,0,0.4)", "rgba(0,0,0,0.2)", "transparent"]}
-        style={styles.gradientOverlay}
+        style={[styles.gradientOverlay, { paddingTop: insets.top }]}
       />
 
       {/* Floating Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { top: insets.top + 12 }]}>
         <View style={styles.headerLeft}>
           <Image
             source={require("../../assets/JoynOS_Logo.png")}
@@ -167,7 +164,7 @@ export default function Feed() {
 
       {/* Live Intent Capture */}
       {showIntentCapture && (
-        <View style={styles.intentCapture}>
+        <View style={[styles.intentCapture, { top: insets.top + 60 }]}>
           <LiveIntentCapture
             onIntentUpdate={(intent) => {
               //setCurrentIntent(intent);
@@ -290,7 +287,7 @@ export default function Feed() {
             <ScrollView
               contentContainerStyle={[
                 styles.gridContainer,
-                { paddingTop: 160, paddingBottom: 16 },
+                { paddingTop: insets.top + 160, paddingBottom: 16 },
               ]}
               showsVerticalScrollIndicator={false}
               //inverted={Platform.OS !== 'web'}
@@ -463,7 +460,6 @@ const styles = StyleSheet.create({
   },
   header: {
     position: "absolute",
-    top: 48,
     left: 16,
     right: 16,
     zIndex: 20,
@@ -521,7 +517,6 @@ const styles = StyleSheet.create({
   },
   intentCapture: {
     position: "absolute",
-    top: 128,
     left: 16,
     right: 16,
     zIndex: 30,
@@ -530,7 +525,6 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    marginTop: 96,
   },
   emptyContainer: {
     flex: 1,
