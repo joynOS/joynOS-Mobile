@@ -177,7 +177,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(30, 194, 139, 0.3)",
     borderRadius: 20,
     zIndex: -1,
-    shadowColor: "#1EC28B",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.6,
     shadowRadius: 30,
@@ -204,7 +203,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.05)",
     borderRadius: 24,
     padding: 24,
-    shadowColor: "#1EC28B",
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.15,
     shadowRadius: 30,
@@ -220,7 +218,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   loginButton: {
-    backgroundColor: "#00C48C",
+    backgroundColor: "#cc5c24",
     marginTop: 20,
     height: 56,
   },
@@ -233,7 +231,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   linkText: {
-    color: "#00C48C",
+    color: "#cc5c24",
     fontWeight: "500",
   },
 });

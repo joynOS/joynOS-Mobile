@@ -34,8 +34,8 @@ const styles = StyleSheet.create({
         width: '48%',
     },
     selectedItem: {
-        backgroundColor: 'rgba(0,196,140,0.2)',
-        borderColor: '#00C48C',
+        backgroundColor: 'rgba(204, 92, 36, 0.2)',
+        borderColor: '#cc5c24',
     },
     label: {
         color: '#ccc',

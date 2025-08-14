@@ -15,7 +15,7 @@ const AppContent = () => {
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000000' }}>
-        <ActivityIndicator size="large" color="#00C48C" />
+        <ActivityIndicator size="large" color="#cc5c24" />
       </View>
     );
   }

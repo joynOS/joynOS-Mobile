@@ -31,9 +31,9 @@ export function DistanceSlider({ value, onChange }: Props) {
                 minimumValue={1}
                 maximumValue={50}
                 step={1}
-                minimumTrackTintColor="#00C48C"
+                minimumTrackTintColor="#cc5c24"
                 maximumTrackTintColor="#666"
-                thumbTintColor="#00C48C"
+                thumbTintColor="#cc5c24"
                 value={normalizedValue}
                 onValueChange={onChange}
             />

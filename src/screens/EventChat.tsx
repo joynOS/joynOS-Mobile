@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 10,
   },
-  me: { alignSelf: 'flex-end', backgroundColor: '#00C48C' },
+  me: { alignSelf: 'flex-end', backgroundColor: '#cc5c24' },
   other: { alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,0.1)' },
   bubbleText: { color: '#fff' },
   inputRow: { flexDirection: 'row', alignItems: 'center', padding: 12, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)' },

@@ -68,7 +68,7 @@ export default function InterestSelector() {
       await userService.updateInterests({ interestIds: selectedInterests });
       await reloadMe();
       // não navegar manualmente; App troca para PrivateNavigator ao detectar onboarding completo
-        } finally {
+    } finally {
       setIsLoading(false);
     }
   };
@@ -93,33 +93,46 @@ export default function InterestSelector() {
 
       {/* Scrollable Interests */}
       <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.interestGrid}>
-          {interestOptions.map((item) => (
-            <InterestItem
-              key={item.id}
-              label={`${item.emoji} ${item.label}`}
-              selected={selectedInterests.includes(item.id)}
-              onPress={() => toggleInterest(item.id)}
-            />
-          ))}
+        {/* Interests Card */}
+        <View style={styles.card}>
+          <View style={styles.interestGrid}>
+            {interestOptions.map((item) => (
+              <InterestItem
+                key={item.id}
+                label={`${item.emoji} ${item.label}`}
+                selected={selectedInterests.includes(item.id)}
+                onPress={() => toggleInterest(item.id)}
+              />
+            ))}
+          </View>
+
+          <View style={styles.selectionCount}>
+            <Text
+              style={{
+                color: selectedInterests.length >= 3 ? "#cc5c24" : "#ccc",
+              }}
+            >
+              {selectedInterests.length}/3 selected
+            </Text>
+          </View>
         </View>
 
-        <View style={styles.selectionCount}>
-          <Text
-            style={{
-              color: selectedInterests.length >= 3 ? "#00C48C" : "#ccc",
-            }}
-          >
-            {selectedInterests.length}/3 selected
+        {/* Distance Slider Card */}
+        <View style={styles.card}>
+          <Text style={styles.distanceTitle}>
+            <Text style={styles.boldText}>Discovery Radius</Text>
           </Text>
-        </View>
-
-        {/* Distance Slider */}
-        <View style={styles.sliderContainer}>
-          <Text style={styles.sliderLabel}>
-            Discovery Radius: {radius} miles
-          </Text>
-          <DistanceSlider value={radius} onChange={setRadius} />
+          <View style={styles.distanceDisplay}>
+            <Text style={styles.distanceText}>Distance</Text>
+            <Text style={styles.distanceValue}>{radius} miles</Text>
+          </View>
+          <View style={styles.sliderContainer}>
+            <DistanceSlider value={radius} onChange={setRadius} />
+            <View style={styles.sliderLabels}>
+              <Text style={styles.sliderLabelText}>1 mile</Text>
+              <Text style={styles.sliderLabelText}>50 miles</Text>
+            </View>
+          </View>
         </View>
       </ScrollView>
 
@@ -129,6 +142,7 @@ export default function InterestSelector() {
           onPress={handleComplete}
           disabled={selectedInterests.length < 3 || isLoading}
           loading={isLoading}
+          type="gradient"
           title={`Complete Setup (${selectedInterests.length}/3)`}
         />
       </View>
@@ -151,7 +165,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   stepLabel: {
-    color: "#00C48C",
+    color: "#cc5c24",
     fontSize: 14,
     fontWeight: "600",
   },
@@ -167,6 +181,14 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   scroll: { paddingBottom: 100 },
+  card: {
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
   interestGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -177,13 +199,46 @@ const styles = StyleSheet.create({
     marginTop: 16,
     alignItems: "center",
   },
-  sliderContainer: {
-    marginTop: 32,
+  distanceTitle: {
+    textAlign: "center",
+    marginBottom: 20,
   },
-  sliderLabel: {
+  boldText: {
     color: "white",
-    marginBottom: 8,
-    fontWeight: "600",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  distanceDisplay: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
+  distanceText: {
+    color: "#ccc",
+    fontSize: 16,
+  },
+  dashLine: {
+    color: "#ccc",
+    fontSize: 16,
+    marginHorizontal: 8,
+  },
+  distanceValue: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  sliderContainer: {
+    marginTop: 10,
+  },
+  sliderLabels: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 8,
+  },
+  sliderLabelText: {
+    color: "#888",
+    fontSize: 12,
   },
   footer: {
     paddingVertical: 16,

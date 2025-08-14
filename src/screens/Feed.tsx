@@ -237,7 +237,7 @@ export default function Feed() {
             }}
             refreshControl={
               <RefreshControl
-                tintColor="#00C48C"
+                tintColor="#cc5c24"
                 refreshing={isRefreshing}
                 onRefresh={async () => {
                   setIsRefreshing(true);
@@ -265,7 +265,7 @@ export default function Feed() {
             ListFooterComponent={
               isLoadingMore ? (
                 <View style={{ padding: 16 }}>
-                  <ActivityIndicator color="#00C48C" />
+                  <ActivityIndicator color="#cc5c24" />
                 </View>
               ) : null
             }
@@ -321,8 +321,8 @@ export default function Feed() {
                       let scoreColor = "#9B51E0"; // joyn-purple
                       let dotColor = "#9B51E0";
                       if (vibeScore >= 90) {
-                        scoreColor = "#00C48C"; // joyn-green
-                        dotColor = "#00C48C";
+                        scoreColor = "#cc5c24"; // joyn-green
+                        dotColor = "#cc5c24";
                       } else if (vibeScore >= 85) {
                         scoreColor = "#F2C94C"; // joyn-yellow
                         dotColor = "#F2C94C";
@@ -425,7 +425,7 @@ export default function Feed() {
               ) : (
                 <View style={styles.discoveryEmpty}>
                   <View style={styles.discoveryEmptyCircle}>
-                    <Plus size={40} color="#00C48C" />
+                    <Plus size={40} color="#cc5c24" />
                   </View>
                   <Text style={styles.discoveryEmptyTitle}>
                     No events to discover
@@ -572,7 +572,7 @@ const styles = StyleSheet.create({
     height: 24,
     borderWidth: 3,
     borderColor: "rgba(255,255,255,0.2)",
-    borderTopColor: "#00C48C",
+    borderTopColor: "#cc5c24",
     borderRadius: 12,
   },
   gridContainer: {
@@ -678,7 +678,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 24,
-    shadowColor: "#00C48C",
+    shadowColor: "#cc5c24",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.6,
     shadowRadius: 10,
@@ -697,7 +697,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   createEventButton: {
-    backgroundColor: "#00C48C",
+    backgroundColor: "#cc5c24",
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 12,

@@ -132,7 +132,7 @@ export default function Profile() {
             >
               <View style={styles.menuItemLeft}>
                 <View style={styles.menuItemIcon}>
-                  <IconComponent size={20} color="#00C48C" />
+                  <IconComponent size={20} color="#cc5c24" />
                 </View>
                 <View style={styles.menuItemText}>
                   <Text style={styles.menuItemTitle}>{item.title}</Text>
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#00C48C',
+    borderColor: '#cc5c24',
   },
   userName: {
     color: 'white',

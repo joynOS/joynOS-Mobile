@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   registerButton: {
-    backgroundColor: '#00C48C',
+    backgroundColor: '#cc5c24',
     marginTop: 20,
     height: 56,
   },
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   linkText: {
-    color: '#00C48C',
+    color: '#cc5c24',
     fontWeight: '500',
   },
 });
