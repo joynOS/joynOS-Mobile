@@ -63,7 +63,11 @@ export default function Feed() {
         setCursor(rec.nextCursor);
         setHasMoreRec(!!rec.nextCursor && (rec.items?.length ?? 0) > 0);
         const browse = await eventsService.browse();
-        const list = Array.isArray(browse) ? browse : (browse && (browse as any).items ? (browse as any).items : []);
+        const list = Array.isArray(browse)
+          ? browse
+          : browse && (browse as any).items
+          ? (browse as any).items
+          : [];
         setDiscovery(list);
         const detailCards = await Promise.all(
           (rec.items || []).slice(0, 6).map(async (it) => {
@@ -116,7 +120,8 @@ export default function Feed() {
                 key={tab.id}
                 onPress={() => {
                   if (tab.id === "you") navigation.navigate("You");
-                  else if (tab.id === "discovery") navigation.navigate("Discovery" as never);
+                  else if (tab.id === "discovery")
+                    navigation.navigate("Discovery" as never);
                   else setActiveFilter(tab.id);
                 }}
                 style={[
@@ -245,7 +250,11 @@ export default function Feed() {
                       !!rec.nextCursor && (rec.items?.length ?? 0) > 0
                     );
                     const browse = await eventsService.browse();
-                    const list = Array.isArray(browse) ? browse : (browse && (browse as any).items ? (browse as any).items : []);
+                    const list = Array.isArray(browse)
+                      ? browse
+                      : browse && (browse as any).items
+                      ? (browse as any).items
+                      : [];
                     setDiscovery(list);
                     const detailCards = await Promise.all(
                       (rec.items || [])
@@ -302,26 +311,15 @@ export default function Feed() {
                   {/* Grid */}
                   <View style={styles.grid}>
                     {discovery.map((event, index) => {
-                      const vibeScore = event.vibeMatchScoreEvent || Math.min(
-                        95,
-                        Math.max(
-                          75,
-                          Math.floor(
-                            80 +
-                              ((event.id * 7) % 20) +
-                              (event.tags?.length || 0) * 2 +
-                              (event.category === "Nightlife" ? 5 : 0)
-                          )
-                        )
-                      );
+                      const vibeScore = event.vibeMatchScoreEvent || 0;
 
-                      let scoreColor = "#9B51E0"; // joyn-purple
+                      let scoreColor = "#9B51E0";
                       let dotColor = "#9B51E0";
                       if (vibeScore >= 90) {
-                        scoreColor = "#cc5c24"; // joyn-green
+                        scoreColor = "#cc5c24";
                         dotColor = "#cc5c24";
                       } else if (vibeScore >= 85) {
-                        scoreColor = "#F2C94C"; // joyn-yellow
+                        scoreColor = "#F2C94C";
                         dotColor = "#F2C94C";
                       }
 
@@ -340,10 +338,7 @@ export default function Feed() {
                           <Image
                             source={{
                               uri:
-                                event.imageUrl ||
-                                `https://images.unsplash.com/photo-${
-                                  1492684223066 + index
-                                }?w=400&h=600&fit=crop&crop=center`,
+                                event.imageUrl || "",
                             }}
                             style={styles.gridItemImage}
                             resizeMode="cover"
@@ -483,7 +478,7 @@ const styles = StyleSheet.create({
   filterPill: {
     paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 12,
+    borderRadius: 8,
     marginRight: 8,
     backgroundColor: "transparent",
     borderWidth: 0,

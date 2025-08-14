@@ -10,14 +10,10 @@ import {
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { useNavigation } from "@react-navigation/native";
-import { useSelector, useDispatch } from "react-redux";
 import type { NavigationProp } from "@react-navigation/native";
-import Button from "../components/Button";
 import type { EventDetail as ApiEvent } from "../types/api";
-import type { RootState } from "../shared/store";
 import type { RootStackParamList } from "../navigation/types";
 import { eventsService } from "../services/events";
-import { addJoinedId } from "../shared/eventSlice";
 import { Clock, MapPin } from "lucide-react-native";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import type { Event } from "../shared/shared";
@@ -35,14 +31,7 @@ export default function EventCard({
   variant = "card",
 }: EventCardProps) {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-  const dispatch = useDispatch();
-  const joinedIds = useSelector((state: RootState) => state.events.joinedIds);
-  const isParticipating =
-    (event as ApiEvent).isMember ||
-    joinedIds.includes(event.id || (event as any).id);
-  const tagCount = Array.isArray((event as any).tags)
-    ? (event as any).tags.length
-    : 0;
+  const isParticipating = (event as ApiEvent)?.isMember;
   const compatibilityScore = (event as any).vibeMatchScoreEvent || 0;
   const memberCount =
     (event as any).interestedCount || Math.floor(Math.random() * 20) + 5;
@@ -67,13 +56,33 @@ export default function EventCard({
   };
 
   const formatEventTime = (input: any) => {
-    const d = new Date(input);
-    return d.toLocaleString("en-US", {
-      weekday: "short",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
+    const eventDate = new Date(input);
+    const now = new Date();
+
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    if (eventDate >= startOfWeek && eventDate <= endOfWeek) {
+      return eventDate.toLocaleString("pt-BR", {
+        weekday: "short",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: false,
+      });
+    } else {
+      return eventDate.toLocaleString("pt-BR", {
+        day: "numeric",
+        month: "short",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: false,
+      });
+    }
   };
 
   const getCompatibilityColor = (score: number) => {
