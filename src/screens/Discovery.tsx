@@ -17,6 +17,8 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/types";
 import { eventsService } from "../services/events";
 import EventDiscoverCard from "../components/EventDiscoverCard";
+import { User } from "lucide-react-native";
+import Button from "../components/Button";
 
 const windowWidth = Dimensions.get("window").width;
 const GRID_ITEM_WIDTH = (windowWidth - 16) / 2;
@@ -73,9 +75,9 @@ export default function Discovery() {
         colors={["rgba(0,0,0,0.4)", "rgba(0,0,0,0.2)", "transparent"]}
         style={styles.gradientOverlay}
       />
-      <View style={[styles.header, { paddingTop: insets.top }]}>
+      <View style={[styles.header, { top: insets.top + 12 }]}>
         <View style={styles.headerLeft}>
-          <RNImage
+          <Image
             source={require("../../assets/JoynOS_Logo.png")}
             style={styles.logo}
           />
@@ -88,7 +90,7 @@ export default function Discovery() {
               <TouchableOpacity
                 key={tab.id}
                 onPress={() => {
-                  if (tab.id === "you") navigation.navigate("You" as never);
+                  if (tab.id === "you") navigation.navigate("You");
                   else if (tab.id === "feed")
                     navigation.navigate("Feed" as never);
                 }}
@@ -109,7 +111,16 @@ export default function Discovery() {
             ))}
           </View>
         </View>
-        <View style={styles.headerRight}></View>
+
+        <View style={styles.headerRight}>
+          <Button
+            onPress={() => navigation.navigate("Profile" as never)}
+            style={styles.iconButton}
+            title=""
+          >
+            <User size={20} color="white" />
+          </Button>
+        </View>
       </View>
 
       {isLoading ? (
@@ -259,4 +270,15 @@ const styles = StyleSheet.create({
   eventVenue: { color: "rgba(255,255,255,0.8)", fontSize: 12, marginTop: 4 },
   empty: { alignItems: "center", paddingTop: 100 },
   emptyText: { color: "#aaa", fontSize: 16 },
+  iconButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    marginLeft: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+    backgroundColor: "transparent",
+  },
 });
