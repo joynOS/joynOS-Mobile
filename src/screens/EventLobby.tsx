@@ -24,15 +24,13 @@ import {
   MoreHorizontal,
   ChevronDown,
   Users,
+  Send,
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { RootStackParamList } from "../navigation/types";
 import { eventsService } from "../services/events";
 import type { EventDetail as EventDetailType } from "../types/api";
-
-// Lobby is the interactive room: steps + chat
-
 type EventState =
   | "PRE_JOIN"
   | "VOTING_OPEN"
@@ -278,11 +276,9 @@ export default function EventLobby() {
 
       <ScrollView
         className="flex-1 px-4"
-        contentContainerStyle={{ paddingBottom: insets.bottom + 160 }}
+        contentContainerStyle={{ paddingBottom: 0 }}
       >
-        {/* Steps accordions */}
         <View className="mb-5">
-          {/* Selected Plan */}
           <TouchableOpacity
             activeOpacity={0.9}
             onPress={() => setIsPlanExpanded((s) => !s)}
@@ -501,9 +497,6 @@ export default function EventLobby() {
           </TouchableOpacity>
         </View>
 
-        {/* Voting UI moved inside Selected Plan accordion */}
-
-        {/* Chat */}
         <View className="mb-4">
           {messages.length === 0 ? (
             <View className="bg-white/5 rounded-xl p-4">
@@ -577,7 +570,6 @@ export default function EventLobby() {
         </View>
       </ScrollView>
 
-      {/* Chat input */}
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="bg-black border-t border-white/10"
@@ -601,23 +593,85 @@ export default function EventLobby() {
           )}
         </ScrollView>
         <View
-          className="flex-row items-center p-4 gap-3"
-          style={{ paddingBottom: insets.bottom + 16 }}
+          style={{
+            backgroundColor: "black",
+            paddingHorizontal: 16,
+            paddingTop: 8,
+          }}
         >
-          <TextInput
-            value={chatInput}
-            onChangeText={setChatInput}
-            placeholder="Share your thoughts..."
-            placeholderTextColor="rgba(255,255,255,0.5)"
-            className="flex-1 bg-white/10 rounded-full px-4 py-3 text-white"
-            multiline
-          />
-          <TouchableOpacity
-            onPress={handleSendMessage}
-            className="bg-green-500 w-12 h-12 rounded-full items-center justify-center"
+          <View
+            style={{
+              position: "relative",
+              borderRadius: 24,
+              borderWidth: 1,
+              borderColor: "rgba(255,255,255,0.2)",
+              padding: 16,
+              marginBottom: 12,
+              shadowColor: "#000",
+              shadowOpacity: 0.4,
+              shadowRadius: 16,
+              shadowOffset: { width: 0, height: 8 },
+              elevation: 14,
+            }}
           >
-            <MessageCircle size={20} color="white" />
-          </TouchableOpacity>
+            <View style={{ position: "relative", justifyContent: "center" }}>
+              <TextInput
+                value={chatInput}
+                onChangeText={setChatInput}
+                placeholder="Share your thoughts..."
+                placeholderTextColor="rgba(255,255,255,0.5)"
+                multiline
+                style={{
+                  width: "100%",
+                  color: "white",
+                  backgroundColor: "rgba(255,255,255,0.10)",
+                  borderWidth: 1,
+                  borderColor: chatInput.trim()
+                    ? "hsla(20, 70%, 47%, 0.5)"
+                    : "rgba(255,255,255,0.20)",
+                  borderRadius: 18,
+                  paddingVertical: 14,
+                  paddingLeft: 42,
+                  paddingRight: 56,
+                  fontSize: 16,
+                }}
+              />
+
+              {/* Botão Send à direita dentro do input */}
+              <TouchableOpacity
+                onPress={handleSendMessage}
+                disabled={!chatInput.trim()}
+                activeOpacity={0.9}
+                style={{
+                  position: "absolute",
+                  right: 6,
+                  top: "50%",
+                  transform: [{ translateY: -20 }],
+                  width: 40,
+                  height: 40,
+                  borderRadius: 12,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderWidth: 1,
+                  backgroundColor: chatInput.trim()
+                    ? "hsla(20, 70%, 47%, 0.10)"
+                    : "transparent",
+                  borderColor: chatInput.trim()
+                    ? "hsla(20, 70%, 47%, 0.20)"
+                    : "transparent",
+                }}
+              >
+                <Send
+                  size={18}
+                  color={
+                    chatInput.trim()
+                      ? "hsl(20, 70%, 47%)" // joyn-green ativo
+                      : "rgba(255,255,255,0.4)"
+                  }
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       </KeyboardAvoidingView>
 
