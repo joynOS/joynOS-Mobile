@@ -267,15 +267,6 @@ export default function You() {
           >
             <User size={20} color="white" />
           </Button>
-          <Button
-            onPress={() => setSortBy(sortBy === "date" ? "activity" : "date")}
-            style={styles.iconButton}
-            title=""
-          >
-            <Text style={styles.sortButtonText}>
-              {sortBy === "date" ? "Sort by Date" : "Sort by Activity"}
-            </Text>
-          </Button>
         </View>
       </View>
       {filteredEvents.length === 0 && (
