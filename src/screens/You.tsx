@@ -1,5 +1,14 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView, Platform, StyleSheet, Image, TouchableOpacity } from "react-native";
+import React, { useEffect, useState, useRef } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  Platform,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { User } from "lucide-react-native";
@@ -13,18 +22,24 @@ import { Button } from "../components/Button";
 import { eventsService } from "../services/events";
 import { RootStackParamList } from "../navigation/types";
 import { useAssets } from "expo-asset";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type FeedScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function You() {
   const navigation = useNavigation<FeedScreenNavigationProp>();
   const [isLoading, setIsLoading] = useState(true);
-  const [activeFilter, setActiveFilter] = useState<"all" | "joined" | "saved" | "liked">("all");
+  const [activeFilter, setActiveFilter] = useState<
+    "all" | "thisweek" | "saved" | "liked"
+  >("all");
   const [sortBy, setSortBy] = useState<"date" | "activity">("date");
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [assets] = useAssets([require("../../assets/JoynOS_Logo.png")]);
   const [joinedEvents, setJoinedEvents] = useState<any[]>([]);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const flatListRef = useRef<FlatList>(null);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     (async () => {
@@ -45,11 +60,13 @@ export default function You() {
           const vibeBase = Array.isArray(tags) ? tags.length : 0;
           const statusRaw = member?.status ?? null;
           const status =
-            statusRaw === "JOINED" || statusRaw === "COMMITTED"
-              ? "attending"
+            statusRaw === "JOINED"
+              ? "Attending"
+              : statusRaw === "COMMITTED"
+              ? "Attending"
               : statusRaw === "ATTENDED"
-              ? "attended"
-              : "interested";
+              ? "Attended"
+              : "Interested";
           return {
             id: ev.id,
             title: ev.title,
@@ -73,17 +90,43 @@ export default function You() {
             category: tags?.[0] ?? "Event",
           };
         });
-        const sorted = normalized.sort(
+        const now = new Date();
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay());
+        startOfWeek.setHours(0, 0, 0, 0);
+
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        endOfWeek.setHours(23, 59, 59, 999);
+
+        const sortedByDate = normalized.sort(
           (a: any, b: any) =>
             new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
         );
-        setJoinedEvents(sorted);
+
+        const thisWeekEvents = sortedByDate.filter((event: any) => {
+          const eventDate = new Date(event.startTime);
+          return eventDate >= startOfWeek && eventDate <= endOfWeek;
+        });
+
+        const pastEvents = sortedByDate
+          .filter((event: any) => {
+            const eventDate = new Date(event.startTime);
+            return eventDate < startOfWeek;
+          })
+          .reverse();
+
+        const futureEvents = sortedByDate.filter((event: any) => {
+          const eventDate = new Date(event.startTime);
+          return eventDate > endOfWeek;
+        });
+
+        setJoinedEvents([...pastEvents, ...thisWeekEvents, ...futureEvents]);
       } finally {
         setIsLoading(false);
       }
     })();
   }, []);
-
 
   const handleSearchToggle = () => {
     setIsSearchOpen(!isSearchOpen);
@@ -102,14 +145,38 @@ export default function You() {
     );
   }
 
+  const loadMoreEvents = async () => {
+    if (isLoadingMore) return;
+    setIsLoadingMore(true);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    } catch (error) {
+      console.error("Error loading more events:", error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
   const getFilteredEvents = () => {
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+
     let events: any[];
     switch (activeFilter) {
       case "all":
         events = [...joinedEvents];
         break;
-      case "joined":
-        events = joinedEvents;
+      case "thisweek":
+        events = joinedEvents.filter((event: any) => {
+          const eventDate = new Date(event.startTime);
+          return eventDate >= startOfWeek && eventDate <= endOfWeek;
+        });
         break;
       case "saved":
         events = [];
@@ -128,19 +195,14 @@ export default function You() {
           (event.title || "").toLowerCase().includes(query) ||
           (event.venue || "").toLowerCase().includes(query) ||
           (event.category || "").toLowerCase().includes(query) ||
-          (event.lastMessage &&
-            event.lastMessage.toLowerCase().includes(query))
+          (event.lastMessage && event.lastMessage.toLowerCase().includes(query))
       );
     }
 
     if (sortBy === "activity") {
       return events.sort((a: any, b: any) => {
-        const aActivity =
-          a.lastMessageTime ||
-          a.startTime;
-        const bActivity =
-          b.lastMessageTime ||
-          b.startTime;
+        const aActivity = a.lastMessageTime || a.startTime;
+        const bActivity = b.lastMessageTime || b.startTime;
         return new Date(bActivity).getTime() - new Date(aActivity).getTime();
       });
     }
@@ -160,53 +222,54 @@ export default function You() {
       <View style={styles.headerGradientOverlay} />
 
       {/* Floating Header */}
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <View style={styles.headerLeft}>
-            {assets ? (
-              <Image
-                source={{ uri: assets[0].localUri || assets[0].uri }}
-                style={styles.logo}
-              />
-            ) : (
-              <LoadingSpinner size="sm" />
-            )}
-
-            <View style={styles.navigationPills}>
-              <TouchableOpacity style={styles.navButtonActive}>
-                <Text style={styles.navButtonTextActive}>Timeline</Text>
-              </TouchableOpacity>
+      <View style={[styles.header, { top: insets.top + 12 }]}>
+        <View style={styles.headerLeft}>
+          <Image
+            source={require("../../assets/JoynOS_Logo.png")}
+            style={styles.logo}
+          />
+          <View style={styles.filterPills}>
+            {[
+              { id: "you", label: "Timeline" },
+              { id: "feed", label: "Feed" },
+              { id: "discovery", label: "Discovery" },
+            ].map((tab) => (
               <TouchableOpacity
-                onPress={() => navigation.navigate("Feed")}
-                style={styles.navButton}
+                key={tab.id}
+                onPress={() => {
+                  if (tab.id === "feed") navigation.navigate("Feed");
+                  else if (tab.id === "discovery")
+                    navigation.navigate("Discovery" as never);
+                }}
+                style={[
+                  styles.filterPill,
+                  tab.id === "you" ? styles.filterPillActive : null,
+                ]}
               >
-                <Text style={styles.navButtonText}>Feed</Text>
+                <Text
+                  style={[
+                    styles.filterPillText,
+                    tab.id === "you" ? styles.filterPillTextActive : null,
+                  ]}
+                >
+                  {tab.label}
+                </Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => navigation.navigate("Discovery" as never)}
-                style={styles.navButton}
-              >
-                <Text style={styles.navButtonText}>Discovery</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.headerRight}>
-            <Button
-              onPress={() => navigation.navigate("Profile")}
-              style={styles.iconButton}
-              title=""
-            >
-              <User size={20} color="white" />
-            </Button>
+            ))}
           </View>
         </View>
 
-        {/* Sort Toggle Button */}
-        <View style={styles.sortButtonContainer}>
+        <View style={styles.headerRight}>
+          <Button
+            onPress={() => navigation.navigate("Profile" as never)}
+            style={styles.iconButton}
+            title=""
+          >
+            <User size={20} color="white" />
+          </Button>
           <Button
             onPress={() => setSortBy(sortBy === "date" ? "activity" : "date")}
-            style={styles.sortButton}
+            style={styles.iconButton}
             title=""
           >
             <Text style={styles.sortButtonText}>
@@ -215,43 +278,83 @@ export default function You() {
           </Button>
         </View>
       </View>
-
-      <ScrollView 
-        className="flex-1" 
-        contentContainerStyle={{ paddingTop: Platform.OS === 'ios' ? 200 : 180, paddingBottom: 24 }}
-      >
-        <View className="px-4">
-          {filteredEvents.length > 0 ? (
-            <View className="space-y-3">
-              {filteredEvents.map((event: any) => (
-                <TimelineEventCard
-                  key={event.id}
-                  event={event}
-                  onPress={() =>
-                    navigation.navigate("EventDetail", {
-                      id: String(event.id),
-                    })
-                  }
-                />
-              ))}
-            </View>
-          ) : (
-            <View className="flex-1 justify-center items-center px-3 h-64">
-              <View className="w-16 h-16 rounded-full bg-joyn-green/20 justify-center items-center mb-4">
-                <Text className="text-joyn-green text-2xl">📅</Text>
-              </View>
-              <Text className="text-white font-bold text-lg mb-2">
-                {searchQuery ? "No events found" : "No events found"}
-              </Text>
-              <Text className="text-white/60 text-sm text-center mb-4">
-                {searchQuery
-                  ? `No events match "${searchQuery}". Try a different search term.`
-                  : "You haven't joined any events yet"}
-              </Text>
-            </View>
-          )}
+      {filteredEvents.length === 0 && (
+        <View className="flex-1 justify-center items-center px-3 h-64">
+          <Text className="text-white font-bold text-lg mb-2">
+            {searchQuery ? "No events found" : "No events found"}
+          </Text>
+          <Text className="text-white/60 text-sm text-center mb-4">
+            {searchQuery
+              ? `No events match "${searchQuery}". Try a different search term.`
+              : "You haven't joined any events yet"}
+          </Text>
         </View>
-      </ScrollView>
+      )}
+      <FlatList
+        ref={flatListRef}
+        data={filteredEvents}
+        keyExtractor={(item: any) => String(item.id)}
+        contentContainerStyle={{
+          paddingTop: Platform.OS === "ios" ? 0 : 20,
+          paddingBottom: insets.top + 90,
+          paddingHorizontal: 16,
+        }}
+        renderItem={({ item: event }) => {
+          const now = new Date();
+          const eventDate = new Date(event.startTime);
+          const isPastEvent = eventDate < now;
+
+          return (
+            <View style={{ marginBottom: 12, opacity: isPastEvent ? 0.6 : 1 }}>
+              <TimelineEventCard
+                event={event}
+                onPress={() =>
+                  navigation.navigate("EventDetail", {
+                    id: String(event.id),
+                  })
+                }
+              />
+            </View>
+          );
+        }}
+        ListHeaderComponent={() =>
+          isLoadingMore ? (
+            <View style={{ paddingVertical: 20, alignItems: "center" }}>
+              <ActivityIndicator size="small" color="#fff" />
+            </View>
+          ) : null
+        }
+        onScrollBeginDrag={(event) => {
+          const { velocity } = event.nativeEvent;
+          if (velocity && velocity.y < -2) {
+            loadMoreEvents();
+          }
+        }}
+        onLayout={() => {
+          setTimeout(() => {
+            if (activeFilter === "thisweek") {
+              const thisWeekIndex = filteredEvents.findIndex((event: any) => {
+                const now = new Date();
+                const startOfWeek = new Date(now);
+                startOfWeek.setDate(now.getDate() - now.getDay());
+                startOfWeek.setHours(0, 0, 0, 0);
+                const eventDate = new Date(event.startTime);
+                return eventDate >= startOfWeek;
+              });
+              if (thisWeekIndex > 0) {
+                flatListRef.current?.scrollToIndex({
+                  index: thisWeekIndex,
+                  animated: false,
+                  viewPosition: 0.3,
+                });
+              }
+            }
+          }, 100);
+        }}
+        showsVerticalScrollIndicator={false}
+        removeClippedSubviews
+        inverted
+      />
 
       <FloatingFilters
         activeFilter={activeFilter}
@@ -304,21 +407,20 @@ const styles = StyleSheet.create({
     zIndex: 10,
     backgroundColor: "rgba(0,0,0,0.4)",
   },
-  header: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 20,
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === "ios" ? 48 : 20,
-    paddingBottom: 16,
-  },
   headerContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 24,
+  },
+  header: {
+    position: "absolute",
+    left: 16,
+    right: 16,
+    zIndex: 20,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   headerLeft: {
     flexDirection: "row",
@@ -403,5 +505,28 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "rgba(255,255,255,0.9)",
   },
+  filterPills: {
+    flexDirection: "row",
+  },
+  filterPill: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginRight: 8,
+    backgroundColor: "transparent",
+    borderWidth: 0,
+  },
+  filterPillActive: {
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderColor: "rgba(255,255,255,0.2)",
+    borderWidth: 1,
+  },
+  filterPillText: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: "rgba(255,255,255,0.8)",
+  },
+  filterPillTextActive: {
+    color: "#fff",
+  },
 });
-

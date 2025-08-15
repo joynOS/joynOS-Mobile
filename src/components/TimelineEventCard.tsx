@@ -7,7 +7,7 @@ type TimelineEvent = {
   imageUrl?: string | null;
   venue?: string | null;
   startTime?: string | Date;
-  status?: "attending" | "interested" | "attended";
+  status?: "Attending" | "Interested" | "Attended" | "Joined";
   vibeScore?: number;
   vibeMatchScoreWithOtherUsers?: number;
   userRating?: number;
@@ -93,12 +93,13 @@ const TimelineEventCard: React.FC<Props> = ({
     () => getEventStatus(event.startTime),
     [event.startTime]
   );
-  const statusLabel =
-    event.status === "attending"
-      ? "Joined"
-      : event.status === "interested"
-      ? "Interested"
-      : "Attended";
+  const statusLabel = event?.status || "Joined";
+  const statusColor =
+    event?.status === "Attending" || event?.status === "Joined"
+      ? "text-joyn-orange"
+      : event?.status === "Interested"
+      ? "text-joyn-purple"
+      : "text-white";
   const vibe = event?.vibeScore || 0;
 
   return (
@@ -131,7 +132,9 @@ const TimelineEventCard: React.FC<Props> = ({
 
         <View className="items-end gap-2">
           <View className="bg-white/10 px-3 py-1.5 rounded-full">
-            <Text className="text-white font-bold text-xs">{statusLabel}</Text>
+            <Text className={`text-white font-bold text-xs ${statusColor}`}>
+              {statusLabel}
+            </Text>
           </View>
           <View className="bg-black/60 px-2.5 py-1.5 rounded-xl">
             <Text className="text-white font-bold text-xs">{vibe}%</Text>
@@ -152,7 +155,7 @@ const TimelineEventCard: React.FC<Props> = ({
 
       <View className="absolute left-4 right-4 bottom-3.5 flex-row justify-between items-center">
         <View>
-          {event.status === "attended" &&
+          {event.status === "Attended" &&
           typeof event.userRating === "number" ? (
             <View className="flex-row items-center gap-2">
               <View className="flex-row gap-1.5">

@@ -1,8 +1,15 @@
-import React from 'react';
-import { View, TouchableOpacity, Text } from 'react-native';
-import { Grid3X3, UserCheck, Bookmark, Heart, Search } from 'lucide-react-native';
+import React from "react";
+import { View, TouchableOpacity, StyleSheet } from "react-native";
+import { BlurView } from "expo-blur";
+import {
+  Grid3X3,
+  UserCheck,
+  Bookmark,
+  Heart,
+  Search,
+} from "lucide-react-native";
 
-type FilterType = 'all' | 'joined' | 'saved' | 'liked';
+type FilterType = "all" | "thisweek" | "saved" | "liked";
 
 type Props = {
   activeFilter: FilterType;
@@ -12,69 +19,137 @@ type Props = {
   searchQuery: string;
 };
 
-const FloatingFilters: React.FC<Props> = ({ 
-  activeFilter, 
-  onFilterChange, 
-  onSearchToggle, 
-  isSearchOpen, 
-  searchQuery 
+const FloatingFilters: React.FC<Props> = ({
+  activeFilter,
+  onFilterChange,
+  onSearchToggle,
+  isSearchOpen,
+  searchQuery,
 }) => {
   return (
-    <View className="absolute right-4 top-1/2 -translate-y-32 flex-col items-center gap-3">
+    <View style={styles.container}>
       <TouchableOpacity
-        onPress={() => onFilterChange('all')}
-        className={`w-10 h-10 rounded-lg justify-center items-center border border-white/10 ${
-          activeFilter === 'all' ? 'bg-white/20' : 'bg-white/5'
-        }`}
+        onPress={() => onFilterChange("all")}
+        style={[styles.button, activeFilter === "all" && styles.buttonActive]}
       >
-        <Grid3X3 size={20} color="white" />
+        <BlurView
+          intensity={15}
+          tint="dark"
+          style={StyleSheet.absoluteFillObject}
+        />
+        <Grid3X3 size={22} color="white" />
       </TouchableOpacity>
 
       <TouchableOpacity
-        onPress={() => onFilterChange('joined')}
-        className={`w-10 h-10 rounded-lg justify-center items-center border ${
-          activeFilter === 'joined' 
-            ? 'border-green-500/30 bg-green-500/20' 
-            : 'border-white/10 bg-white/5'
-        }`}
+        onPress={() => onFilterChange("thisweek")}
+        style={[
+          styles.button,
+          activeFilter === "thisweek" && styles.buttonActiveOrange,
+        ]}
       >
-        <UserCheck size={20} color="white" />
+        <BlurView
+          intensity={15}
+          tint="dark"
+          style={StyleSheet.absoluteFillObject}
+        />
+        <UserCheck size={22} color="white" />
       </TouchableOpacity>
 
       <TouchableOpacity
-        onPress={() => onFilterChange('saved')}
-        className={`w-10 h-10 rounded-lg justify-center items-center border ${
-          activeFilter === 'saved' 
-            ? 'border-yellow-500/30 bg-yellow-500/20' 
-            : 'border-white/10 bg-white/5'
-        }`}
+        onPress={() => onFilterChange("saved")}
+        style={[
+          styles.button,
+          activeFilter === "saved" && styles.buttonActiveYellow,
+        ]}
       >
-        <Bookmark size={20} color="white" />
+        <BlurView
+          intensity={15}
+          tint="dark"
+          style={StyleSheet.absoluteFillObject}
+        />
+        <Bookmark size={22} color="white" />
       </TouchableOpacity>
 
       <TouchableOpacity
-        onPress={() => onFilterChange('liked')}
-        className={`w-10 h-10 rounded-lg justify-center items-center border ${
-          activeFilter === 'liked' 
-            ? 'border-purple-500/30 bg-purple-500/20' 
-            : 'border-white/10 bg-white/5'
-        }`}
+        onPress={() => onFilterChange("liked")}
+        style={[
+          styles.button,
+          activeFilter === "liked" && styles.buttonActivePurple,
+        ]}
       >
-        <Heart size={20} color="white" />
+        <BlurView
+          intensity={15}
+          tint="dark"
+          style={StyleSheet.absoluteFillObject}
+        />
+        <Heart size={22} color="white" />
       </TouchableOpacity>
 
       <TouchableOpacity
         onPress={onSearchToggle}
-        className={`w-10 h-10 rounded-lg justify-center items-center border ${
-          isSearchOpen || searchQuery 
-            ? 'border-blue-500/30 bg-blue-500/20' 
-            : 'border-white/10 bg-white/5'
-        }`}
+        style={[
+          styles.button,
+          (isSearchOpen || searchQuery) && styles.buttonActiveBlue,
+        ]}
       >
-        <Search size={20} color="white" />
+        <BlurView
+          intensity={15}
+          tint="dark"
+          style={StyleSheet.absoluteFillObject}
+        />
+        <Search size={22} color="white" />
       </TouchableOpacity>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    position: "absolute",
+    right: 16,
+    top: "50%",
+    transform: [{ translateY: -128 }],
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 12,
+    zIndex: 30,
+  },
+  button: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  buttonActive: {
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderColor: "rgba(255,255,255,0.2)",
+  },
+  buttonActiveOrange: {
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderColor: "rgba(255,255,255,0.2)",
+  },
+  buttonActiveYellow: {
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderColor: "rgba(255,255,255,0.2)",
+  },
+  buttonActivePurple: {
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderColor: "rgba(255,255,255,0.2)",
+  },
+  buttonActiveBlue: {
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderColor: "rgba(255,255,255,0.2)",
+  },
+});
 
 export default FloatingFilters;
