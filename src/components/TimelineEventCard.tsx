@@ -1,3 +1,4 @@
+import { BlurView } from "expo-blur";
 import React, { memo, useMemo } from "react";
 import { View, Text, Image, TouchableOpacity } from "react-native";
 
@@ -120,24 +121,43 @@ const TimelineEventCard: React.FC<Props> = ({
       <View className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/60 to-black/90" />
 
       <View className="absolute top-3 left-3 right-3 flex-row justify-between items-start">
-        <View className="bg-black/40 px-3 py-2 rounded-xl max-w-[60%]">
-          <Text className="text-white font-bold text-base" numberOfLines={1}>
-            {title}
-          </Text>
-          <Text className="text-white/80 text-xs mt-0.5" numberOfLines={1}>
-            {venue}
-          </Text>
-        </View>
-
-        <View className="items-end gap-2">
-          <View className="bg-white/10 px-3 py-1.5 rounded-full">
-            <Text className={`text-white font-bold text-xs ${statusColor}`}>
-              {statusLabel}
+        <BlurView
+          intensity={14}
+          tint="dark"
+          className="rounded-xl overflow-hidden bg-black/40 border border-blue-500/30 max-w-[60%]"
+        >
+          <View className="bg-blue-500/20 px-3 py-2">
+            <Text className="text-white font-bold text-base" numberOfLines={1}>
+              {title}
+            </Text>
+            <Text className="text-white/80 text-xs mt-0.5" numberOfLines={1}>
+              {venue}
             </Text>
           </View>
-          <View className="bg-black/60 px-2.5 py-1.5 rounded-xl">
-            <Text className="text-white font-bold text-xs">{vibe}%</Text>
-          </View>
+        </BlurView>
+
+        <View className="items-end gap-2">
+          <BlurView
+            intensity={14}
+            tint="dark"
+            className="rounded-full overflow-hidden bg-black/40 border border-blue-500/30"
+          >
+            <View className="bg-white/10 px-3 py-1.5 rounded-full">
+              <Text className={`text-white font-bold text-md ${statusColor}`}>
+                {statusLabel}
+              </Text>
+            </View>
+          </BlurView>
+
+          <BlurView
+            intensity={14}
+            tint="dark"
+            className="rounded-xl overflow-hidden bg-black/40 border border-blue-500/30"
+          >
+            <View className="bg-black/60 px-2.5 py-1.5 rounded-xl">
+              <Text className="text-white font-bold text-md">{vibe}%</Text>
+            </View>
+          </BlurView>
         </View>
       </View>
 
