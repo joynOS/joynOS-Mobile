@@ -56,7 +56,6 @@ const getCategory = (
   return { label: ev.aiNormalized?.categories?.[0] ?? raw, emoji: "✨" } as any;
 };
 
-
 const EventDiscoverCard: React.FC<Props> = ({ event, onPress, style }) => {
   const dateStr = getDateStr(event.startTime ?? undefined);
   const cat = getCategory(event);
@@ -64,8 +63,7 @@ const EventDiscoverCard: React.FC<Props> = ({ event, onPress, style }) => {
   const title = event.title || "Untitled Event";
   const venue = event.venue || "";
   const image =
-    event.imageUrl ||
-    `https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&h=1200&fit=crop&crop=center`;
+    event.imageUrl || "";
 
   return (
     <TouchableOpacity
@@ -141,15 +139,15 @@ const styles = StyleSheet.create({
   },
   dateBadge: {
     backgroundColor: "rgba(0,0,0,0.8)",
-    borderRadius: 8,
-    paddingVertical: 2,
+    borderRadius: 6,
+    paddingVertical: 8,
     paddingHorizontal: 8,
   },
   dateText: { color: "#fff", fontSize: 12, fontWeight: "600" },
   vibeBadge: {
     backgroundColor: "rgba(0,0,0,0.8)",
-    borderRadius: 999,
-    paddingVertical: 2,
+    borderRadius: 6,
+    paddingVertical: 8,
     paddingHorizontal: 8,
     flexDirection: "row",
     alignItems: "center",
@@ -158,10 +156,10 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: "#F2C94C",
+    backgroundColor: "#cc5c24",
     marginRight: 6,
   },
-  vibeText: { color: "#F2C94C", fontSize: 12, fontWeight: "700" },
+  vibeText: { color: "#cc5c24", fontSize: 12, fontWeight: "700" },
   bottomInfo: { position: "absolute", left: 8, right: 8, bottom: 8 },
   catBadge: {
     backgroundColor: "rgba(0,0,0,0.7)",

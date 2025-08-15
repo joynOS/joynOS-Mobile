@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Dimensions,
   FlatList,
+  ActivityIndicator,
 } from "react-native";
 import { Image as RNImage } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -18,15 +19,33 @@ import { eventsService } from "../services/events";
 import EventDiscoverCard from "../components/EventDiscoverCard";
 
 const windowWidth = Dimensions.get("window").width;
-const GRID_ITEM_WIDTH = (windowWidth - 24) / 2;
-
-type Nav = NativeStackNavigationProp<RootStackParamList, "Discovery">;
+const GRID_ITEM_WIDTH = (windowWidth - 16) / 2;
 
 export default function Discovery() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const [items, setItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const flatListRef = useRef<FlatList>(null);
+
+  const loadMoreEvents = async () => {
+    if (isLoadingMore) return;
+    setIsLoadingMore(true);
+    try {
+      const res = await eventsService.browse();
+      const list = Array.isArray(res)
+        ? res
+        : res && (res as any).items
+        ? (res as any).items
+        : [];
+      setItems((prev) => [...list, ...prev]);
+    } catch (error) {
+      console.error("Error loading more events:", error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -42,6 +61,9 @@ export default function Discovery() {
         console.error("Error loading events:", error);
       } finally {
         setIsLoading(false);
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: false });
+        }, 100);
       }
     })();
   }, []);
@@ -100,17 +122,18 @@ export default function Discovery() {
         </View>
       ) : (
         <FlatList
+          ref={flatListRef}
           data={items}
           keyExtractor={(it: any, idx) => String(it.id ?? idx)}
           numColumns={2}
           columnWrapperStyle={{
             justifyContent: "space-between",
-            paddingHorizontal: 12,
-            gap: 8,
+            paddingHorizontal: 8,
+            gap: 15,
           }}
           contentContainerStyle={{
-            paddingTop: 30 + insets.top,
-            paddingBottom: 16 + insets.bottom,
+            paddingTop: -insets.top + 120,
+            paddingBottom: 32 + insets.bottom,
           }}
           renderItem={({ item }) => (
             <EventDiscoverCard
@@ -121,11 +144,25 @@ export default function Discovery() {
                   { id: String(item.id) } as never
                 )
               }
-              style={{ width: GRID_ITEM_WIDTH, marginBottom: 12 }}
+              style={{ width: GRID_ITEM_WIDTH, marginBottom: 16 }}
             />
           )}
+          ListHeaderComponent={() =>
+            isLoadingMore ? (
+              <View style={{ paddingVertical: 20, alignItems: "center" }}>
+                <ActivityIndicator size="small" color="#fff" />
+              </View>
+            ) : null
+          }
+          onScrollBeginDrag={(event) => {
+            const { velocity } = event.nativeEvent;
+            if (velocity && velocity.y < -2) {
+              loadMoreEvents();
+            }
+          }}
           showsVerticalScrollIndicator={false}
           removeClippedSubviews
+          inverted
         />
       )}
     </View>
