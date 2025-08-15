@@ -157,3 +157,98 @@ export type EventParticipant = {
   avatar: string | null;
   status: 'JOINED' | 'CANT_MAKE_IT' | 'COMMITTED';
 };
+
+export type ProfileSummary = {
+  eventsCount: number;
+  circleCount: number;
+  commitRate: number;
+  commitScore: number;
+  commitBreakdown: {
+    attended: number;
+    acknowledgedEvents: number;
+    unratedEvents: number;
+    posBonus: number;
+    negPenalty: number;
+  };
+};
+
+export type AttendedEvent = {
+  eventId: string;
+  title: string;
+  venue: string;
+  imageUrl: string;
+  startTime: string;
+  endTime: string;
+  myPlaceRating: number | null;
+  myPlanRating: number | null;
+  selectedPlanId: string | null;
+};
+
+export type AttendedEventsResponse = {
+  items: AttendedEvent[];
+  nextCursor: string | null;
+};
+
+export type VisitedPlace = {
+  venue: string;
+  address: string;
+  lat: number;
+  lng: number;
+  lastVisitedAt: string;
+  visits: number;
+  avgPlaceRating: number;
+};
+
+export type VisitedPlacesResponse = {
+  items: VisitedPlace[];
+  nextCursor: string | null;
+};
+
+export type CircleConnection = {
+  userId: string;
+  name: string;
+  avatar: string | null;
+  tagline: string | null;
+  matchPercent: number;
+};
+
+export type CircleResponse = {
+  items: CircleConnection[];
+  nextCursor: string | null;
+};
+
+export type PlanPreference = {
+  key: string;
+  title: string;
+  subtitle: string;
+  matchLabel: string;
+};
+
+export type ProfilePreferences = {
+  interests: Interest[];
+  planPreferences: PlanPreference[];
+};
+
+export type EventReview = {
+  eventId: string;
+  userId: string;
+  placeRating: number;
+  planRating: number;
+  planId: string;
+  comment: string | null;
+  connectedUserIds: string[];
+  createdAt: string;
+};
+
+export type CreateReviewRequest = {
+  placeRating: number;
+  planRating: number;
+  comment?: string;
+  connectedUserIds: string[];
+};
+
+export type ReviewResponse = {
+  ok: boolean;
+  review: EventReview;
+  circleAdded: number;
+};

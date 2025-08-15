@@ -22,7 +22,8 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import type { RootStackParamList } from "../navigation/types";
 import { eventsService } from "../services/events";
-import type { EventDetail as EventDetailType } from "../types/api";
+import { reviewService } from "../services/review";
+import type { EventDetail as EventDetailType, EventReview } from "../types/api";
 import { StyleSheet } from "react-native";
 import Button from "../components/Button";
 
@@ -39,6 +40,8 @@ export default function EventDetail() {
   const [event, setEvent] = useState<EventDetailType | null>(null);
   const [plans, setPlans] = useState<EventDetailType["plans"]>([]);
   const [currentState, setCurrentState] = useState<EventState>("PRE_JOIN");
+  const [existingReview, setExistingReview] = useState<EventReview | null>(null);
+  const [showReviewCTA, setShowReviewCTA] = useState(false);
 
   useEffect(() => {
     loadEvent();
@@ -50,8 +53,29 @@ export default function EventDetail() {
       setEvent(data);
       setPlans(data.plans || []);
       setCurrentState(!data.isMember ? "PRE_JOIN" : "MEMBER");
-    } catch (e) {
+      
+      await checkReviewEligibility(data);
+    } catch (error) {
       Alert.alert("Error", "Failed to load event details");
+    }
+  };
+
+  const checkReviewEligibility = async (eventData: EventDetailType) => {
+    const now = new Date();
+    const eventEnded = eventData.endTime && new Date(eventData.endTime) < now;
+    
+    if (eventEnded && eventData.isMember) {
+      try {
+        const review = await reviewService.getEventReview(id);
+        setExistingReview(review);
+        setShowReviewCTA(false);
+      } catch (error: any) {
+        if (error.response?.status === 404) {
+          setShowReviewCTA(true);
+        }
+      }
+    } else {
+      setShowReviewCTA(false);
     }
   };
 
@@ -393,6 +417,54 @@ export default function EventDetail() {
             <TouchableOpacity
               onPress={() => navigation.goBack()}
               className="flex-1 py-[16px] rounded-lg border border-white/20 items-center justify-center bg-black/30"
+            >
+              <Text style={{ color: "#fff", fontWeight: "600", fontSize: 16 }}>
+                Close
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : showReviewCTA ? (
+          <View className="flex-row items-center">
+            <View className="flex-1 mr-3">
+              <TouchableOpacity
+                onPress={() => (navigation as any).navigate("EventReview", { 
+                  eventId: id, 
+                  eventTitle: event.title 
+                })}
+                className="py-[16px] rounded-lg items-center justify-center"
+                style={{ backgroundColor: "#cc5c24" }}
+              >
+                <Text
+                  style={{ color: "#fff", fontWeight: "600", fontSize: 16 }}
+                >
+                  Review Event
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              className="flex-1 py-[16px] rounded-lg border border-white/20 items-center justify-center bg-black/30"
+            >
+              <Text style={{ color: "#fff", fontWeight: "600", fontSize: 16 }}>
+                Close
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : existingReview ? (
+          <View className="flex-row items-center">
+            <View className="flex-1 mr-3 p-4 rounded-lg bg-green-500/20 border border-green-500/30">
+              <Text className="text-green-400 text-sm font-medium text-center">
+                ✓ Review Submitted
+              </Text>
+              <Text className="text-white/60 text-xs text-center mt-1">
+                Thank you for your feedback!
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              className="px-6 py-[16px] rounded-lg border border-white/20 items-center justify-center bg-black/30"
             >
               <Text style={{ color: "#fff", fontWeight: "600", fontSize: 16 }}>
                 Close

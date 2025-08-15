@@ -15,4 +15,5 @@ export type RootStackParamList = {
   EventDetail: { id: string };
   EventChat: { id: string };
   EventLobby: { id: string };
+  EventReview: { eventId: string; eventTitle: string };
 };

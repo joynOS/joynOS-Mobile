@@ -17,6 +17,10 @@ import LoadingSpinner from "../components/LoadSpinner";
 import TimelineEventCard from "../components/TimelineEventCard";
 import FloatingFilters from "../components/FloatingFilters";
 import SearchInput from "../components/SearchInput";
+import ProfileSummary from "../components/ProfileSummary";
+import AttendedEventsGrid from "../components/AttendedEventsGrid";
+import CircleGrid from "../components/CircleGrid";
+import VisitedPlacesGrid from "../components/VisitedPlacesGrid";
 import { Button } from "../components/Button";
 
 import { eventsService } from "../services/events";
@@ -308,13 +312,35 @@ export default function You() {
             </View>
           );
         }}
-        ListHeaderComponent={() =>
-          isLoadingMore ? (
-            <View style={{ paddingVertical: 20, alignItems: "center" }}>
-              <ActivityIndicator size="small" color="#fff" />
+        ListHeaderComponent={() => (
+          <View className="mb-6">
+            <ProfileSummary />
+            
+            <View className="mb-6">
+              <AttendedEventsGrid />
             </View>
-          ) : null
-        }
+            
+            <View className="mb-6">
+              <CircleGrid />
+            </View>
+            
+            <View className="mb-6">
+              <VisitedPlacesGrid />
+            </View>
+            
+            {joinedEvents.length > 0 && (
+              <View className="px-4 mb-4">
+                <Text className="text-white text-lg font-semibold">Recent Timeline</Text>
+              </View>
+            )}
+            
+            {isLoadingMore ? (
+              <View style={{ paddingVertical: 20, alignItems: "center" }}>
+                <ActivityIndicator size="small" color="#fff" />
+              </View>
+            ) : null}
+          </View>
+        )}
         onScrollBeginDrag={(event) => {
           const { velocity } = event.nativeEvent;
           if (velocity && velocity.y < -2) {
