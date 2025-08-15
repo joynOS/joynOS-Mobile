@@ -17,7 +17,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import {
   Clock,
-  MessageCircle,
   CheckCircle2,
   Calendar,
   ArrowLeft,
@@ -31,6 +30,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { RootStackParamList } from "../navigation/types";
 import { eventsService } from "../services/events";
 import type { EventDetail as EventDetailType } from "../types/api";
+
 type EventState =
   | "PRE_JOIN"
   | "VOTING_OPEN"
@@ -40,6 +40,7 @@ type EventState =
   | "CANT_MAKE_IT";
 
 export default function EventLobby() {
+  // ----- HOOKS NO TOPO (ordem fixa em todo render) -----
   const route = useRoute<RouteProp<RootStackParamList, "EventLobby">>();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
@@ -53,14 +54,52 @@ export default function EventLobby() {
   const [messages, setMessages] = useState<any[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [booking, setBooking] = useState<any>(null);
+
   const [isPlanExpanded, setIsPlanExpanded] = useState<boolean>(false);
-  const [isBookingExpanded, setIsBookingExpanded] = useState<boolean>(false);
+  const [isBookingExpanded, setIsBookingExpanded] = useState<boolean>(false); // mantido para compatibilidade
+  const [isBookingMinimized, setIsBookingMinimized] = useState<boolean>(false);
+
   const isVotingOpen = currentState === "VOTING_OPEN";
 
+  // ----- EFFECTS -----
   useEffect(() => {
     loadEventData();
   }, [id]);
 
+  useEffect(() => {
+    if (currentState !== "VOTING_OPEN" || !event?.votingEndsAt) return;
+
+    const timer = setInterval(() => {
+      const now = Date.now();
+      const end = new Date(event.votingEndsAt!).getTime();
+      const diff = Math.max(0, Math.floor((end - now) / 1000));
+
+      const minutes = Math.floor(diff / 60);
+      const seconds = diff % 60;
+      setVoteCountdown(
+        `${minutes.toString().padStart(2, "0")}:${seconds
+          .toString()
+          .padStart(2, "0")}`
+      );
+
+      if (diff <= 0) {
+        clearInterval(timer);
+        loadEventData();
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [currentState, event?.votingEndsAt]);
+
+  useEffect(() => {
+    if (currentState !== "VOTING_OPEN") return;
+    const pollTimer = setInterval(() => {
+      loadEventData();
+    }, 10000);
+    return () => clearInterval(pollTimer);
+  }, [currentState]);
+
+  // ----- FUNÇÕES -----
   const loadEventData = async () => {
     try {
       const data = await eventsService.getById(id);
@@ -119,39 +158,6 @@ export default function EventLobby() {
     }
   };
 
-  useEffect(() => {
-    if (currentState !== "VOTING_OPEN" || !event?.votingEndsAt) return;
-
-    const timer = setInterval(() => {
-      const now = Date.now();
-      const end = new Date(event.votingEndsAt!).getTime();
-      const diff = Math.max(0, Math.floor((end - now) / 1000));
-
-      const minutes = Math.floor(diff / 60);
-      const seconds = diff % 60;
-      setVoteCountdown(
-        `${minutes.toString().padStart(2, "0")}:${seconds
-          .toString()
-          .padStart(2, "0")}`
-      );
-
-      if (diff <= 0) {
-        clearInterval(timer);
-        loadEventData();
-      }
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [currentState, event?.votingEndsAt]);
-
-  useEffect(() => {
-    if (currentState !== "VOTING_OPEN") return;
-    const pollTimer = setInterval(() => {
-      loadEventData();
-    }, 10000);
-    return () => clearInterval(pollTimer);
-  }, [currentState]);
-
   const handleVote = async (planId: string) => {
     if (selectedPlanId) return;
     try {
@@ -204,6 +210,7 @@ export default function EventLobby() {
     }
   };
 
+  // ----- EARLY RETURN (após todos os hooks) -----
   if (!event) {
     return (
       <SafeAreaView className="flex-1 bg-black">
@@ -215,9 +222,8 @@ export default function EventLobby() {
     );
   }
 
-  const vibeScore = event.vibeMatchScoreEvent || 0;
+  // ----- HELPERS/DERIVADOS (sem hooks) -----
   const selectedPlan = plans.find((p) => p.id === selectedPlanId);
-
   const participantsById: Record<string, any> = Object.fromEntries(
     (event.participants || []).map((p) => [p.id, p])
   );
@@ -231,7 +237,6 @@ export default function EventLobby() {
     const hours = Math.floor(mins / 60);
     return hours === 1 ? "1 hr ago" : `${hours} hrs ago`;
   };
-
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -242,12 +247,17 @@ export default function EventLobby() {
       minute: "2-digit",
     });
   };
+  const totalVotes = Math.max(
+    1,
+    plans.reduce((acc, p) => acc + (p.votes || 0), 0)
+  );
 
+  // ----- RENDER -----
   return (
     <SafeAreaView className="flex-1 bg-black">
       <StatusBar barStyle="light-content" />
 
-      {/* Header as per design: back, title, more; with attendee count below */}
+      {/* Header */}
       <View className="px-4 pt-3 pb-2">
         <View className="flex-row items-center">
           <TouchableOpacity
@@ -278,6 +288,7 @@ export default function EventLobby() {
         className="flex-1 px-4"
         contentContainerStyle={{ paddingBottom: 0 }}
       >
+        {/* ===== Selected Plan / Voting ===== */}
         <View className="mb-5">
           <TouchableOpacity
             activeOpacity={0.9}
@@ -290,6 +301,7 @@ export default function EventLobby() {
               end={{ x: 1, y: 1 }}
               style={{ padding: 16, borderRadius: 24 }}
             >
+              {/* Header */}
               <View className="flex-row items-center">
                 <View className="w-10 h-10 rounded-full bg-black/30 items-center justify-center mr-3">
                   <CheckCircle2 size={20} color="#ffb05a" />
@@ -311,6 +323,7 @@ export default function EventLobby() {
                 />
               </View>
 
+              {/* Body */}
               {isPlanExpanded && (
                 <View className="mt-4">
                   {isVotingOpen ? (
@@ -321,45 +334,80 @@ export default function EventLobby() {
                           {voteCountdown}
                         </Text>
                       </View>
-                      {plans.map((plan) => (
-                        <TouchableOpacity
-                          key={plan.id}
-                          onPress={() => handleVote(plan.id)}
-                          disabled={!!selectedPlanId}
-                          className={`bg-white/5 rounded-lg p-3 mb-3 border ${
-                            selectedPlanId === plan.id
-                              ? "border-green-500"
-                              : "border-white/10"
-                          }`}
-                        >
-                          <View className="flex-row items-start gap-3">
-                            <View
-                              className={`w-5 h-5 rounded-full border-2 mt-1 items-center justify-center ${
-                                selectedPlanId === plan.id
-                                  ? "border-green-500 bg-green-500"
-                                  : "border-white/40"
-                              }`}
-                            >
-                              {selectedPlanId === plan.id && (
-                                <View className="w-2 h-2 bg-white rounded-full" />
-                              )}
-                            </View>
-                            <Text className="text-2xl">
-                              {plan.emoji || "⛅"}
-                            </Text>
-                            <View className="flex-1">
-                              <Text className="text-white font-semibold text-base">
-                                {plan.title}
+
+                      {plans.map((plan) => {
+                        const pct = Math.round(
+                          ((plan.votes || 0) / totalVotes) * 100
+                        );
+                        const isChosen = selectedPlanId === plan.id;
+                        const canVote = !selectedPlanId;
+
+                        return (
+                          <TouchableOpacity
+                            key={plan.id}
+                            onPress={() => handleVote(plan.id)}
+                            disabled={!canVote}
+                            className="bg-white/5 rounded-2xl p-3 mb-3 border border-white/10"
+                            activeOpacity={0.9}
+                          >
+                            <View className="flex-row items-start gap-3">
+                              <View
+                                className={`w-5 h-5 rounded-full border-2 mt-1 items-center justify-center ${
+                                  isChosen
+                                    ? "bg-primary border-primary"
+                                    : "border-white/40"
+                                }`}
+                              >
+                                {isChosen && (
+                                  <View className="w-2 h-2 bg-white rounded-full" />
+                                )}
+                              </View>
+
+                              <Text className="text-2xl">
+                                {plan.emoji || "⛅"}
                               </Text>
-                              <Text className="text-white/80 text-sm">
-                                {plan.description}
-                              </Text>
+
+                              <View className="flex-1">
+                                <View className="flex-row items-center justify-between">
+                                  <Text className="text-white font-semibold text-base flex-1">
+                                    {plan.title}
+                                  </Text>
+                                  <Text className="text-white/70 text-xs">
+                                    {plan.votes ?? 0} votes
+                                  </Text>
+                                </View>
+                                <Text className="text-white/80 text-sm mt-1">
+                                  {plan.description}
+                                </Text>
+
+                                {/* Barra de progresso */}
+                                <View className="h-2 bg-white/10 rounded-full mt-3 overflow-hidden">
+                                  <View
+                                    style={{ width: `${pct}%` }}
+                                    className="h-2 rounded-full"
+                                  >
+                                    <LinearGradient
+                                      colors={[
+                                        "hsl(20,70%,47%)",
+                                        "hsl(258,100%,67%)",
+                                      ]}
+                                      start={{ x: 0, y: 0 }}
+                                      end={{ x: 1, y: 0 }}
+                                      style={{
+                                        height: "100%",
+                                        borderRadius: 999,
+                                      }}
+                                    />
+                                  </View>
+                                </View>
+                              </View>
                             </View>
-                          </View>
-                        </TouchableOpacity>
-                      ))}
+                          </TouchableOpacity>
+                        );
+                      })}
                     </View>
                   ) : selectedPlan ? (
+                    // Resultado
                     <View className="flex-row items-start">
                       <Text className="text-2xl mr-3">
                         {selectedPlan.emoji || "✨"}
@@ -379,124 +427,218 @@ export default function EventLobby() {
             </LinearGradient>
           </TouchableOpacity>
 
-          {/* Book Your Spot */}
+          {/* ===== Booking (colapsável) ===== */}
           <TouchableOpacity
             activeOpacity={0.9}
             onPress={() => {
-              if (isVotingOpen) return; // disabled until voting is done
-              setIsBookingExpanded((s) => !s);
+              if (isVotingOpen) return; // bloqueado enquanto vota
+              setIsBookingMinimized((s) => !s);
+              setIsBookingExpanded(true);
             }}
             className="rounded-3xl overflow-hidden"
             style={{
-              backgroundColor: "#121212",
+              backgroundColor: "rgba(0,0,0,0.4)",
               borderWidth: 1,
-              borderColor: "rgba(255,255,255,0.06)",
+              borderColor: "rgba(255,255,255,0.15)",
             }}
           >
-            <View className="p-4">
+            <View className="flex-row items-center justify-between p-4">
               <View className="flex-row items-center">
-                {booking?.isBooked ? (
-                  <View className="w-10 h-10 rounded-full bg-green-500/20 items-center justify-center mr-3">
-                    <CheckCircle2 size={20} color="#22c55e" />
+                <View className="relative mr-3">
+                  <View
+                    className="w-8 h-8 rounded-xl items-center justify-center"
+                    style={{
+                      backgroundColor: booking?.isBooked
+                        ? "hsla(20,70%,47%,0.8)" // joyn-green aprox
+                        : "rgba(255,204,102,0.9)", // amarelo
+                    }}
+                  >
+                    {booking?.isBooked ? (
+                      <CheckCircle2 size={16} color="#fff" />
+                    ) : (
+                      <Calendar size={16} color="#fff" />
+                    )}
                   </View>
-                ) : (
-                  <View className="w-10 h-10 rounded-full bg-amber-500/20 items-center justify-center mr-3">
-                    <Calendar size={20} color="#ffcc66" />
-                  </View>
-                )}
-                <View className="flex-1">
-                  <Text className="text-white font-semibold text-base">
-                    Book Your Spot
+                  {!booking?.isBooked && (
+                    <View
+                      style={{
+                        position: "absolute",
+                        width: 12,
+                        height: 12,
+                        borderRadius: 6,
+                        right: -6,
+                        top: -6,
+                        backgroundColor: "rgba(255,204,102,1)",
+                      }}
+                      className="animate-pulse"
+                    />
+                  )}
+                </View>
+
+                <View>
+                  <Text className="text-white font-semibold text-sm">
+                    {booking?.isBooked
+                      ? "Reservation Confirmed"
+                      : "Book Your Spot"}
                   </Text>
                   <Text
-                    className={`${
+                    className={`text-xs ${
                       isVotingOpen
                         ? "text-white/40"
                         : booking?.isBooked
                         ? "text-green-400"
                         : "text-amber-400"
-                    } text-sm`}
+                    }`}
                   >
                     {isVotingOpen
                       ? "Available after voting"
                       : booking?.isBooked
-                      ? "Reservation confirmed"
+                      ? "All set for tonight!"
                       : "Reservation required"}
                   </Text>
                 </View>
+              </View>
+
+              <View
+                className="w-8 h-8 items-center justify-center rounded-xl"
+                style={{ backgroundColor: "rgba(255,255,255,0.10)" }}
+              >
                 <ChevronDown
-                  size={18}
+                  size={16}
                   color={isVotingOpen ? "#666" : "#fff"}
                   style={{
                     transform: [
-                      { rotate: isBookingExpanded ? "180deg" : "0deg" },
+                      { rotate: isBookingMinimized ? "0deg" : "180deg" },
                     ],
                   }}
                 />
               </View>
+            </View>
 
-              {isBookingExpanded && !isVotingOpen && (
-                <View className="mt-4">
-                  <View className="bg-white/5 rounded-xl p-4 mb-3">
-                    <Text className="text-white font-semibold mb-2">
-                      Reserve Your Table at {event.venue}
-                    </Text>
-                    <Text className="text-white/70 text-sm">
-                      Party size: {event.interestedCount} • Time:{" "}
-                      {formatTime(event.startTime)}
-                    </Text>
+            {/* Content */}
+            {!isBookingMinimized && !isVotingOpen && (
+              <View className="px-4 pb-4">
+                {booking?.isBooked ? (
+                  <View
+                    className="p-3 rounded-xl border"
+                    style={{
+                      backgroundColor: "rgba(34,197,94,0.10)",
+                      borderColor: "rgba(34,197,94,0.20)",
+                    }}
+                  >
+                    <View className="flex-row items-center">
+                      <View
+                        className="w-8 h-8 rounded-xl items-center justify-center mr-3"
+                        style={{ backgroundColor: "rgba(34,197,94,0.20)" }}
+                      >
+                        <CheckCircle2 size={16} color="#22c55e" />
+                      </View>
+                      <View className="flex-1">
+                        <Text className="text-green-400 font-semibold text-sm">
+                          Reservation Confirmed!
+                        </Text>
+                        <Text className="text-white/80 text-xs">
+                          Your table is secured for tonight. See you there!
+                        </Text>
+                      </View>
+                    </View>
                   </View>
-                  {booking?.isBooked ? (
+                ) : (
+                  // Before Booking
+                  <View className="gap-4">
+                    <View
+                      className="p-4 rounded-2xl border"
+                      style={{
+                        backgroundColor: "rgba(255,204,102,0.10)",
+                        borderColor: "rgba(255,204,102,0.20)",
+                      }}
+                    >
+                      <View className="flex-row items-start">
+                        <View
+                          className="w-10 h-10 rounded-xl items-center justify-center mr-3"
+                          style={{ backgroundColor: "rgba(255,204,102,0.20)" }}
+                        >
+                          <Calendar size={20} color="#ffcc66" />
+                        </View>
+                        <View className="flex-1">
+                          <Text className="text-white font-semibold text-sm mb-2">
+                            Reserve Your Table at {event.venue}
+                          </Text>
+                          <Text className="text-white/80 text-xs mb-3">
+                            To secure your spot for “
+                            {selectedPlan?.title || "Plan"}”, please make a
+                            reservation. This ensures we have a table ready for
+                            our group tonight.
+                          </Text>
+
+                          {/* Detalhes */}
+                          <View className="gap-2">
+                            <View className="flex-row items-center justify-between">
+                              <Text className="text-white/60 text-xs">
+                                Party size:
+                              </Text>
+                              <Text className="text-white text-xs font-medium">
+                                {event.interestedCount ?? 0} people
+                              </Text>
+                            </View>
+                            <View className="flex-row items-center justify-between">
+                              <Text className="text-white/60 text-xs">
+                                Time:
+                              </Text>
+                              <Text className="text-white text-xs font-medium">
+                                {formatTime(event.startTime)}
+                              </Text>
+                            </View>
+                            <View className="flex-row items-center justify-between">
+                              <Text className="text-white/60 text-xs">
+                                Date:
+                              </Text>
+                              <Text className="text-white text-xs font-medium">
+                                Tonight
+                              </Text>
+                            </View>
+                          </View>
+                        </View>
+                      </View>
+                    </View>
+
+                    {/* Botões */}
                     <View className="flex-row gap-3">
                       {booking?.externalBookingUrl ? (
                         <TouchableOpacity
                           onPress={handleBooking}
-                          className="flex-1 bg-white/10 py-3 rounded-xl border border-white/20"
+                          className="flex-1 rounded-xl"
+                          style={{ backgroundColor: "rgba(255,204,102,1)" }}
+                          activeOpacity={0.9}
                         >
-                          <Text className="text-white text-center font-semibold">
-                            Open Ticket
+                          <Text className="text-black text-center font-semibold px-4 py-3">
+                            Book Now
                           </Text>
                         </TouchableOpacity>
                       ) : null}
-                      <View
-                        className="flex-1 py-3 rounded-xl items-center justify-center"
-                        style={{
-                          borderWidth: 1,
-                          borderColor: "rgba(34,197,94,0.5)",
-                          backgroundColor: "rgba(34,197,94,0.08)",
-                        }}
-                      >
-                        <Text className="text-green-400 font-semibold">
-                          All set
-                        </Text>
-                      </View>
-                    </View>
-                  ) : (
-                    <View className="flex-row gap-3">
-                      <TouchableOpacity
-                        onPress={handleBooking}
-                        className="flex-1 bg-amber-500 py-3 rounded-xl"
-                      >
-                        <Text className="text-black text-center font-semibold">
-                          Book Now
-                        </Text>
-                      </TouchableOpacity>
+
                       <TouchableOpacity
                         onPress={handleBookingConfirm}
-                        className="flex-1 bg-white/10 py-3 rounded-xl border border-white/20"
+                        className="flex-1 rounded-xl border"
+                        style={{
+                          backgroundColor: "rgba(255,255,255,0.10)",
+                          borderColor: "rgba(255,255,255,0.20)",
+                        }}
+                        activeOpacity={0.9}
                       >
-                        <Text className="text-white text-center font-semibold">
+                        <Text className="text-white text-center font-semibold px-4 py-3">
                           Already Booked
                         </Text>
                       </TouchableOpacity>
                     </View>
-                  )}
-                </View>
-              )}
-            </View>
+                  </View>
+                )}
+              </View>
+            )}
           </TouchableOpacity>
         </View>
 
+        {/* ===== Chat messages ===== */}
         <View className="mb-4">
           {messages.length === 0 ? (
             <View className="bg-white/5 rounded-xl p-4">
@@ -592,6 +734,8 @@ export default function EventLobby() {
             )
           )}
         </ScrollView>
+
+        {/* Composer (glass) */}
         <View
           style={{
             backgroundColor: "black",
@@ -631,13 +775,12 @@ export default function EventLobby() {
                     : "rgba(255,255,255,0.20)",
                   borderRadius: 18,
                   paddingVertical: 14,
-                  paddingLeft: 42,
+                  paddingLeft: 16,
                   paddingRight: 56,
                   fontSize: 16,
                 }}
               />
 
-              {/* Botão Send à direita dentro do input */}
               <TouchableOpacity
                 onPress={handleSendMessage}
                 disabled={!chatInput.trim()}
@@ -665,7 +808,7 @@ export default function EventLobby() {
                   size={18}
                   color={
                     chatInput.trim()
-                      ? "hsl(20, 70%, 47%)" // joyn-green ativo
+                      ? "hsl(20, 70%, 47%)"
                       : "rgba(255,255,255,0.4)"
                   }
                 />

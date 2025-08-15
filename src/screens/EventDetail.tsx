@@ -271,55 +271,53 @@ export default function EventDetail() {
           </View>
         </View>
 
-        {!!event.participants?.length && (
-          <View className="rounded-2xl overflow-hidden border border-white/20">
-            <BlurView intensity={15} tint="dark" className="absolute inset-0" />
-            <View className="absolute inset-0 bg-white/5" />
-            <View className="p-4">
-              <View className="flex-row items-center mb-4">
-                <Users size={18} color="white" />
-                <Text className="text-white font-bold text-base ml-2">
-                  Who's Going (
-                  {event.interestedCount || event.participants.length} people)
-                </Text>
-              </View>
+        <View className="rounded-2xl overflow-hidden border border-white/20">
+          <BlurView intensity={15} tint="dark" className="absolute inset-0" />
+          <View className="absolute inset-0 bg-white/5" />
+          <View className="p-4">
+            <View className="flex-row items-center mb-4">
+              <Users size={18} color="white" />
+              <Text className="text-white font-bold text-base ml-2">
+                Who's Going (
+                {event.interestedCount || event.participants.length} people)
+              </Text>
+            </View>
 
-              <View className="flex-row flex-wrap items-center ">
-                {event.participants.slice(0, 8).map((p) => {
-                  const score = event.vibeMatchScoreWithOtherUsers ?? 0;
-                  return (
-                    <View key={p.id} className="w-[22%] items-center mb-4">
-                      {p.avatar ? (
-                        <Image
-                          source={{ uri: p.avatar }}
-                          className="w-12 h-12 rounded-full border-2 border-white/20 mb-1"
-                        />
-                      ) : (
-                        <View className="w-12 h-12 rounded-full border-2 border-white/20 bg-[#cc5c24] items-center justify-center mb-1">
-                          <Text className="text-white text-lg font-semibold">
-                            {p.name?.[0]?.toUpperCase() ?? "?"}
-                          </Text>
-                        </View>
-                      )}
-                      <Text
-                        numberOfLines={1}
-                        className="text-white text-xs font-medium"
-                      >
-                        {p.name}
-                      </Text>
-                      <Text
-                        className="text-xs font-semibold mt-1"
-                        style={{ color: getVibeScoreColor(score) }}
-                      >
-                        {score}%
-                      </Text>
-                    </View>
-                  );
-                })}
-              </View>
+            <View className="flex-row flex-wrap items-center ">
+              {event.participants.slice(0, 8).map((p) => {
+                const score = event.vibeMatchScoreWithOtherUsers ?? 0;
+                return (
+                  <View key={p.id} className="w-[22%] items-center mb-4">
+                    {p.avatar ? (
+                      <Image
+                        source={{ uri: p.avatar }}
+                        className="w-12 h-12 rounded-full border-2 border-white/20 mb-1"
+                      />
+                    ) : (
+                      <View className="w-12 h-12 rounded-full border-2 border-white/20 bg-[#cc5c24] items-center justify-center mb-1">
+                        <Text className="text-white text-lg font-semibold">
+                          {p.name?.[0]?.toUpperCase() ?? "?"}
+                        </Text>
+                      </View>
+                    )}
+                    <Text
+                      numberOfLines={1}
+                      className="text-white text-xs font-medium"
+                    >
+                      {p.name}
+                    </Text>
+                    <Text
+                      className="text-xs font-semibold mt-1"
+                      style={{ color: getVibeScoreColor(score) }}
+                    >
+                      {score}%
+                    </Text>
+                  </View>
+                );
+              })}
             </View>
           </View>
-        )}
+        </View>
 
         {!!plans.length && (
           <View className="rounded-2xl overflow-hidden border border-white/20">
