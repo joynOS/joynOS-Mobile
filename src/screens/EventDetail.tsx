@@ -60,6 +60,7 @@ export default function EventDetail() {
       await eventsService.join(id);
       setCurrentState("MEMBER");
       loadEvent();
+      (navigation as any).navigate("EventLobby", { id });
     } catch {
       Alert.alert("Error", "Failed to join event");
     }
