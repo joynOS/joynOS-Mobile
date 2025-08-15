@@ -101,7 +101,6 @@ const TimelineEventCard: React.FC<Props> = ({
       ? "text-joyn-purple"
       : "text-white";
   const vibe = event?.vibeScore || 0;
-
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -139,18 +138,15 @@ const TimelineEventCard: React.FC<Props> = ({
           <View className="bg-black/60 px-2.5 py-1.5 rounded-xl">
             <Text className="text-white font-bold text-xs">{vibe}%</Text>
           </View>
-          {/* {event.vibeMatchScoreWithOtherUsers && (
-            <View className="bg-green-500/20 px-2.5 py-1 rounded-xl">
-              <Text className="text-green-400 font-semibold text-xs">
-                {event.vibeMatchScoreWithOtherUsers}% match
-              </Text>
-            </View>
-          )} */}
         </View>
       </View>
 
       <View className="absolute left-4 right-4 top-24">
         <Text className="text-white text-lg font-bold">{dateLine}</Text>
+      </View>
+
+      <View className="absolute left-4 right-4 bottom-2">
+        <Text className="text-white text-lg">{event?.attendees} people</Text>
       </View>
 
       <View className="absolute left-4 right-4 bottom-3.5 flex-row justify-between items-center">
