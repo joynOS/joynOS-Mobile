@@ -109,10 +109,14 @@ export type EventDetail = {
   selectedPlanId: string | null;
   // Backend flag: whether current user is a member of the event
   isMember?: boolean;
+  // Backend flag: whether current user has committed to attend
+  isCommitted?: boolean;
   tags: string[];
   createdAt: string;
   updatedAt: string;
   plans: EventPlan[];
+  // AI-generated content
+  aiVibeAnalysis?: string;
   // Dynamic scoring and analytics
   vibeMatchScoreEvent: number;
   vibeMatchScoreWithOtherUsers: number;

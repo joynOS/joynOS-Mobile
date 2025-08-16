@@ -42,6 +42,8 @@ export default function EventDetail() {
   const [currentState, setCurrentState] = useState<EventState>("PRE_JOIN");
   const [existingReview, setExistingReview] = useState<EventReview | null>(null);
   const [showReviewCTA, setShowReviewCTA] = useState(false);
+  const [showCommitButtons, setShowCommitButtons] = useState(false);
+  const [commitStatus, setCommitStatus] = useState<"committed" | "not_committed" | null>(null);
 
   useEffect(() => {
     loadEvent();
@@ -55,6 +57,7 @@ export default function EventDetail() {
       setCurrentState(!data.isMember ? "PRE_JOIN" : "MEMBER");
       
       await checkReviewEligibility(data);
+      checkCommitEligibility(data);
     } catch (error) {
       Alert.alert("Error", "Failed to load event details");
     }
@@ -79,6 +82,23 @@ export default function EventDetail() {
     }
   };
 
+  const checkCommitEligibility = (eventData: EventDetailType) => {
+    const now = new Date();
+    const eventStart = new Date(eventData.startTime);
+    const threeHoursBefore = new Date(eventStart.getTime() - (3 * 60 * 60 * 1000)); 
+    
+    const shouldShowCommit = eventData.isMember && 
+                           now >= threeHoursBefore && 
+                           now < eventStart;
+    
+    setShowCommitButtons(shouldShowCommit ?? false);
+    
+    // Assume que o usuário ainda não commitou (pode vir do backend)
+    if (shouldShowCommit) {
+      setCommitStatus(eventData.isCommitted ? "committed" : "not_committed");
+    }
+  };
+
   const handleJoin = async () => {
     try {
       await eventsService.join(id);
@@ -87,6 +107,26 @@ export default function EventDetail() {
       (navigation as any).navigate("EventLobby", { id });
     } catch {
       Alert.alert("Error", "Failed to join event");
+    }
+  };
+
+  const handleCommit = async () => {
+    try {
+      await eventsService.commit(id, "IN");
+      setCommitStatus("committed");
+      Alert.alert("Success", "You're committed to attend!");
+    } catch {
+      Alert.alert("Error", "Failed to commit to event");
+    }
+  };
+
+  const handleUncommit = async () => {
+    try {
+      await eventsService.commit(id, "OUT");
+      setCommitStatus("not_committed");
+      Alert.alert("Success", "Commitment removed");
+    } catch {
+      Alert.alert("Error", "Failed to remove commitment");
     }
   };
 
@@ -470,6 +510,54 @@ export default function EventDetail() {
                 Close
               </Text>
             </TouchableOpacity>
+          </View>
+        ) : showCommitButtons ? (
+          <View style={{ gap: 12 }}>
+            {/* Botões de Commit */}
+            <View className="flex-row items-center" style={{ gap: 12 }}>
+              {commitStatus === "committed" ? (
+                <View className="flex-1">
+                  <TouchableOpacity
+                    onPress={handleUncommit}
+                    className="py-[16px] rounded-lg items-center justify-center bg-red-600"
+                  >
+                    <Text style={{ color: "#fff", fontWeight: "600", fontSize: 16 }}>
+                      ❌ I'm not going
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View className="flex-1">
+                  <TouchableOpacity
+                    onPress={handleCommit}
+                    className="py-[16px] rounded-lg items-center justify-center bg-green-600"
+                  >
+                    <Text style={{ color: "#fff", fontWeight: "600", fontSize: 16 }}>
+                      ✅ I'm in!
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              <TouchableOpacity
+                onPress={() => (navigation as any).navigate("EventLobby", { id })}
+                className="flex-1 py-[16px] rounded-lg border border-white/20 items-center justify-center bg-black/30"
+              >
+                <Text style={{ color: "#fff", fontWeight: "600", fontSize: 16 }}>
+                  Lobby
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Mensagem informativa */}
+            <View className="bg-amber-500/20 border border-amber-500/30 rounded-lg p-3">
+              <Text className="text-amber-400 text-sm font-medium text-center">
+                ⏰ Event starts in less than 3 hours
+              </Text>
+              <Text className="text-white/70 text-xs text-center mt-1">
+                Please confirm your attendance
+              </Text>
+            </View>
           </View>
         ) : (
           <View className="flex-row items-center">
