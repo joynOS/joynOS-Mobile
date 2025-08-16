@@ -734,44 +734,6 @@ export default function Profile() {
                     }}
                   />
                 </View>
-
-                <View style={[styles.menuItemRow, styles.rowBetween]}>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 12,
-                    }}
-                  >
-                    <View
-                      style={[
-                        styles.menuIconCircle,
-                        { backgroundColor: "rgba(99,102,241,0.2)" },
-                      ]}
-                    >
-                      {isDarkMode ? (
-                        <Moon size={16} color={"#6366f1"} />
-                      ) : (
-                        <Sun size={16} color={"#6366f1"} />
-                      )}
-                    </View>
-                    <View>
-                      <Text style={styles.menuItemTitle}>Theme</Text>
-                      <Text style={styles.menuItemSubtitle}>
-                        {isDarkMode ? "Dark Mode" : "Light Mode"}
-                      </Text>
-                    </View>
-                  </View>
-                  <Switch
-                    value={isDarkMode}
-                    onValueChange={setIsDarkMode}
-                    thumbColor={"#fff"}
-                    trackColor={{
-                      true: JOYN_PURPLE,
-                      false: "rgba(255,255,255,0.2)",
-                    }}
-                  />
-                </View>
               </View>
 
               <Text style={styles.menuSectionTitle}>Support & Data</Text>
