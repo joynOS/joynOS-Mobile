@@ -33,7 +33,7 @@ import Button from "../components/Button";
 type EventState = "PRE_JOIN" | "MEMBER";
 
 const HEADER_H = 160;
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window'); // h-40 (igual ao web)
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window"); // h-40 (igual ao web)
 
 export default function EventDetail() {
   const insets = useSafeAreaInsets();
@@ -44,10 +44,14 @@ export default function EventDetail() {
   const [event, setEvent] = useState<EventDetailType | null>(null);
   const [plans, setPlans] = useState<EventDetailType["plans"]>([]);
   const [currentState, setCurrentState] = useState<EventState>("PRE_JOIN");
-  const [existingReview, setExistingReview] = useState<EventReview | null>(null);
+  const [existingReview, setExistingReview] = useState<EventReview | null>(
+    null
+  );
   const [showReviewCTA, setShowReviewCTA] = useState(false);
   const [showCommitButtons, setShowCommitButtons] = useState(false);
-  const [commitStatus, setCommitStatus] = useState<"committed" | "not_committed" | null>(null);
+  const [commitStatus, setCommitStatus] = useState<
+    "committed" | "not_committed" | null
+  >(null);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
   const [allPhotos, setAllPhotos] = useState<string[]>([]);
@@ -62,12 +66,12 @@ export default function EventDetail() {
       setEvent(data);
       setPlans(data.plans || []);
       setCurrentState(!data.isMember ? "PRE_JOIN" : "MEMBER");
-      
+
       await checkReviewEligibility(data);
       checkCommitEligibility(data);
-      
+
       const photos = [...(data.gallery || [])];
-      data.plans?.forEach(plan => {
+      data.plans?.forEach((plan) => {
         if (plan.photoUrl) {
           photos.push(plan.photoUrl);
         }
@@ -81,7 +85,7 @@ export default function EventDetail() {
   const checkReviewEligibility = async (eventData: EventDetailType) => {
     const now = new Date();
     const eventEnded = eventData.endTime && new Date(eventData.endTime) < now;
-    
+
     if (eventEnded && eventData.isMember) {
       try {
         const review = await reviewService.getEventReview(id);
@@ -100,14 +104,15 @@ export default function EventDetail() {
   const checkCommitEligibility = (eventData: EventDetailType) => {
     const now = new Date();
     const eventStart = new Date(eventData.startTime);
-    const threeHoursBefore = new Date(eventStart.getTime() - (3 * 60 * 60 * 1000)); 
-    
-    const shouldShowCommit = eventData.isMember && 
-                           now >= threeHoursBefore && 
-                           now < eventStart;
-    
+    const threeHoursBefore = new Date(
+      eventStart.getTime() - 3 * 60 * 60 * 1000
+    );
+
+    const shouldShowCommit =
+      eventData.isMember && now >= threeHoursBefore && now < eventStart;
+
     setShowCommitButtons(shouldShowCommit ?? false);
-    
+
     // Assume que o usuário ainda não commitou (pode vir do backend)
     if (shouldShowCommit) {
       setCommitStatus(eventData.isCommitted ? "committed" : "not_committed");
@@ -159,7 +164,8 @@ export default function EventDetail() {
   }
 
   const vibeScore = event.vibeMatchScoreEvent ?? 0;
-  const selectedPlan = event.plans?.find(p => p.isSelected) || event.plans?.[0];
+  const selectedPlan =
+    event.plans?.find((p) => p.isSelected) || event.plans?.[0];
   const gallery = event.gallery || [];
 
   const handleExternalLink = async () => {
@@ -169,13 +175,13 @@ export default function EventDetail() {
   };
 
   const openPhotoModal = (photoUrl: string) => {
-    const photoIndex = allPhotos.findIndex(url => url === photoUrl);
+    const photoIndex = allPhotos.findIndex((url) => url === photoUrl);
     setSelectedPhotoIndex(photoIndex >= 0 ? photoIndex : 0);
     setShowPhotoModal(true);
   };
 
   const renderGalleryItem = ({ item }: { item: string }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       className="w-32 h-32 rounded-xl overflow-hidden mr-3"
       onPress={() => openPhotoModal(item)}
     >
@@ -353,11 +359,11 @@ export default function EventDetail() {
             </View>
 
             <Text className="text-white/80 text-sm leading-relaxed mb-4">
-              {event.aiNormalized?.vibeAnalysis || 
-               event.description ||
-               `This ${
-                 event.regionName?.toLowerCase() || "venue"
-               } attracts creative professionals and music lovers. High energy atmosphere with great networking opportunities.`}
+              {event.aiNormalized?.vibeAnalysis ||
+                event.description ||
+                `This ${
+                  event.regionName?.toLowerCase() || "venue"
+                } attracts creative professionals and music lovers. High energy atmosphere with great networking opportunities.`}
             </Text>
 
             {event.vibeKey && (
@@ -453,31 +459,33 @@ export default function EventDetail() {
                 <View
                   key={plan.id}
                   className={`rounded-xl p-3 mb-2 border ${
-                    plan.isSelected ? 'border-[#cc5c24]' : 'border-gray-700/50'
+                    plan.isSelected ? "border-[#cc5c24]" : "border-gray-700/50"
                   }`}
-                  style={{ 
-                    backgroundColor: plan.isSelected 
-                      ? "rgba(204,92,36,0.2)" 
-                      : "rgba(31,31,31,0.6)" 
+                  style={{
+                    backgroundColor: plan.isSelected
+                      ? "rgba(204,92,36,0.2)"
+                      : "rgba(31,31,31,0.6)",
                   }}
                 >
                   <View className="flex-row items-start">
                     <View
                       className="w-8 h-8 rounded-lg items-center justify-center mr-3"
-                      style={{ 
-                        backgroundColor: plan.isSelected 
-                          ? "#cc5c24" 
-                          : "rgba(55,65,81,0.7)" 
+                      style={{
+                        backgroundColor: plan.isSelected
+                          ? "#cc5c24"
+                          : "rgba(55,65,81,0.7)",
                       }}
                     >
                       <Text className="text-lg">{plan.emoji ?? "✨"}</Text>
                     </View>
                     <View className="flex-1">
                       <View className="flex-row items-center justify-between mb-1">
-                        <Text className={`text-sm font-medium ${
-                          plan.isSelected ? 'text-[#cc5c24]' : 'text-white'
-                        }`}>
-                          {plan.title} {plan.isSelected && '✓'}
+                        <Text
+                          className={`text-sm font-medium ${
+                            plan.isSelected ? "text-[#cc5c24]" : "text-white"
+                          }`}
+                        >
+                          {plan.title} {plan.isSelected && "✓"}
                         </Text>
                         <Text className="text-white/60 text-xs">
                           {plan.votes ?? 0} votes
@@ -492,7 +500,7 @@ export default function EventDetail() {
                         </Text>
                       )}
                       {plan.photoUrl && (
-                        <TouchableOpacity 
+                        <TouchableOpacity
                           onPress={() => openPhotoModal(plan.photoUrl!)}
                           className="w-full h-24 rounded-lg overflow-hidden mb-2"
                         >
@@ -562,10 +570,12 @@ export default function EventDetail() {
           <View className="flex-row items-center">
             <View className="flex-1 mr-3">
               <TouchableOpacity
-                onPress={() => (navigation as any).navigate("EventReview", { 
-                  eventId: id, 
-                  eventTitle: event.title 
-                })}
+                onPress={() =>
+                  (navigation as any).navigate("EventReview", {
+                    eventId: id,
+                    eventTitle: event.title,
+                  })
+                }
                 className="py-[16px] rounded-lg items-center justify-center"
                 style={{ backgroundColor: "#cc5c24" }}
               >
@@ -608,37 +618,16 @@ export default function EventDetail() {
           </View>
         ) : showCommitButtons ? (
           <View style={{ gap: 12 }}>
-            {/* Botões de Commit */}
             <View className="flex-row items-center" style={{ gap: 12 }}>
-              {commitStatus === "committed" ? (
-                <View className="flex-1">
-                  <TouchableOpacity
-                    onPress={handleUncommit}
-                    className="py-[16px] rounded-lg items-center justify-center bg-red-600"
-                  >
-                    <Text style={{ color: "#fff", fontWeight: "600", fontSize: 16 }}>
-                      ❌ I'm not going
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <View className="flex-1">
-                  <TouchableOpacity
-                    onPress={handleCommit}
-                    className="py-[16px] rounded-lg items-center justify-center bg-green-600"
-                  >
-                    <Text style={{ color: "#fff", fontWeight: "600", fontSize: 16 }}>
-                      ✅ I'm in!
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-
               <TouchableOpacity
-                onPress={() => (navigation as any).navigate("EventLobby", { id })}
+                onPress={() =>
+                  (navigation as any).navigate("EventLobby", { id })
+                }
                 className="flex-1 py-[16px] rounded-lg border border-white/20 items-center justify-center bg-black/30"
               >
-                <Text style={{ color: "#fff", fontWeight: "600", fontSize: 16 }}>
+                <Text
+                  style={{ color: "#fff", fontWeight: "600", fontSize: 16 }}
+                >
                   Lobby
                 </Text>
               </TouchableOpacity>
@@ -691,11 +680,11 @@ export default function EventDetail() {
       >
         <View className="flex-1 bg-black">
           <StatusBar hidden />
-          
+
           <TouchableOpacity
             onPress={() => setShowPhotoModal(false)}
             className="absolute top-12 right-4 z-10 w-10 h-10 rounded-full items-center justify-center"
-            style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+            style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
           >
             <Text className="text-white text-lg font-bold">×</Text>
           </TouchableOpacity>
@@ -717,17 +706,19 @@ export default function EventDetail() {
                 <View className="flex-1 justify-center items-center">
                   <Image
                     source={{ uri: item }}
-                    style={{ 
-                      width: screenWidth, 
+                    style={{
+                      width: screenWidth,
                       height: screenHeight,
-                      resizeMode: 'contain'
+                      resizeMode: "contain",
                     }}
                   />
                 </View>
               </View>
             )}
             onMomentumScrollEnd={(event) => {
-              const index = Math.round(event.nativeEvent.contentOffset.x / screenWidth);
+              const index = Math.round(
+                event.nativeEvent.contentOffset.x / screenWidth
+              );
               setSelectedPhotoIndex(index);
             }}
           />
