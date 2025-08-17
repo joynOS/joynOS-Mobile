@@ -40,7 +40,6 @@ type EventState =
   | "CANT_MAKE_IT";
 
 export default function EventLobby() {
-  // ----- HOOKS NO TOPO (ordem fixa em todo render) -----
   const route = useRoute<RouteProp<RootStackParamList, "EventLobby">>();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
@@ -54,14 +53,12 @@ export default function EventLobby() {
   const [messages, setMessages] = useState<any[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [booking, setBooking] = useState<any>(null);
-
   const [isPlanExpanded, setIsPlanExpanded] = useState<boolean>(false);
-  const [isBookingExpanded, setIsBookingExpanded] = useState<boolean>(false); // mantido para compatibilidade
+  const [isBookingExpanded, setIsBookingExpanded] = useState<boolean>(false);
   const [isBookingMinimized, setIsBookingMinimized] = useState<boolean>(false);
 
   const isVotingOpen = currentState === "VOTING_OPEN";
 
-  // ----- EFFECTS -----
   useEffect(() => {
     loadEventData();
   }, [id]);
@@ -99,14 +96,12 @@ export default function EventLobby() {
     return () => clearInterval(pollTimer);
   }, [currentState]);
 
-  // ----- FUNÇÕES -----
   const loadEventData = async () => {
     try {
       const data = await eventsService.getById(id);
       setEvent(data);
       setPlans(data.plans || []);
 
-      // Persist + restore voted plan while voting is open
       const votedKey = `event:${id}:votedPlanId`;
       let nextSelected: string | null = data.selectedPlanId;
       if (!nextSelected && data.votingState === "OPEN") {
@@ -174,8 +169,10 @@ export default function EventLobby() {
   };
 
   const handleBooking = async () => {
-    if (booking?.externalBookingUrl) {
-      await WebBrowser.openBrowserAsync(booking.externalBookingUrl);
+    const bookingUrl =
+      booking?.selectedPlan?.externalBookingUrl || booking?.externalBookingUrl;
+    if (bookingUrl) {
+      await WebBrowser.openBrowserAsync(bookingUrl);
     }
   };
 
@@ -210,7 +207,6 @@ export default function EventLobby() {
     }
   };
 
-  // ----- EARLY RETURN (após todos os hooks) -----
   if (!event) {
     return (
       <SafeAreaView className="flex-1 bg-black">
@@ -222,7 +218,6 @@ export default function EventLobby() {
     );
   }
 
-  // ----- HELPERS/DERIVADOS (sem hooks) -----
   const selectedPlan = plans.find((p) => p.id === selectedPlanId);
   const participantsById: Record<string, any> = Object.fromEntries(
     (event.participants || []).map((p) => [p.id, p])
@@ -252,7 +247,6 @@ export default function EventLobby() {
     plans.reduce((acc, p) => acc + (p.votes || 0), 0)
   );
 
-  // ----- RENDER -----
   return (
     <SafeAreaView className="flex-1 bg-black">
       <StatusBar barStyle="light-content" />
@@ -407,7 +401,6 @@ export default function EventLobby() {
                       })}
                     </View>
                   ) : selectedPlan ? (
-                    // Resultado
                     <View className="flex-row items-start">
                       <Text className="text-2xl mr-3">
                         {selectedPlan.emoji || "✨"}
@@ -427,11 +420,10 @@ export default function EventLobby() {
             </LinearGradient>
           </TouchableOpacity>
 
-          {/* ===== Booking (colapsável) ===== */}
           <TouchableOpacity
             activeOpacity={0.9}
             onPress={() => {
-              if (isVotingOpen) return; // bloqueado enquanto vota
+              if (isVotingOpen) return;
               setIsBookingMinimized((s) => !s);
               setIsBookingExpanded(true);
             }}
@@ -544,7 +536,6 @@ export default function EventLobby() {
                     </View>
                   </View>
                 ) : (
-                  // Before Booking
                   <View className="gap-4">
                     <View
                       className="p-4 rounded-2xl border"
@@ -562,11 +553,14 @@ export default function EventLobby() {
                         </View>
                         <View className="flex-1">
                           <Text className="text-white font-semibold text-sm mb-2">
-                            Reserve Your Table at {event.venue}
+                            Reserve Your Table at{" "}
+                            {booking?.selectedPlan?.venue ||
+                              selectedPlan?.venue ||
+                              event.venue}
                           </Text>
                           <Text className="text-white/80 text-xs mb-3">
-                            To secure your spot for “
-                            {selectedPlan?.title || "Plan"}”, please make a
+                            To secure your spot for "
+                            {selectedPlan?.title || "Plan"}", please make a
                             reservation. This ensures we have a table ready for
                             our group tonight.
                           </Text>
@@ -604,7 +598,8 @@ export default function EventLobby() {
 
                     {/* Botões */}
                     <View className="flex-row gap-3">
-                      {booking?.externalBookingUrl ? (
+                      {booking?.selectedPlan?.externalBookingUrl ||
+                      booking?.externalBookingUrl ? (
                         <TouchableOpacity
                           onPress={handleBooking}
                           className="flex-1 rounded-xl"

@@ -7,16 +7,19 @@ import {
   TouchableOpacity,
   StatusBar,
   Alert,
+  FlatList,
+  Linking,
+  Modal,
+  Dimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRoute, useNavigation, RouteProp } from "@react-navigation/native";
 import {
-  ArrowLeft,
   Bookmark,
   Clock,
   MapPin,
   Users,
-  Sparkles,
+  ExternalLink,
 } from "lucide-react-native";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
@@ -29,7 +32,8 @@ import Button from "../components/Button";
 
 type EventState = "PRE_JOIN" | "MEMBER";
 
-const HEADER_H = 160; // h-40 (igual ao web)
+const HEADER_H = 160;
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window'); // h-40 (igual ao web)
 
 export default function EventDetail() {
   const insets = useSafeAreaInsets();
@@ -44,6 +48,9 @@ export default function EventDetail() {
   const [showReviewCTA, setShowReviewCTA] = useState(false);
   const [showCommitButtons, setShowCommitButtons] = useState(false);
   const [commitStatus, setCommitStatus] = useState<"committed" | "not_committed" | null>(null);
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
+  const [allPhotos, setAllPhotos] = useState<string[]>([]);
 
   useEffect(() => {
     loadEvent();
@@ -58,6 +65,14 @@ export default function EventDetail() {
       
       await checkReviewEligibility(data);
       checkCommitEligibility(data);
+      
+      const photos = [...(data.gallery || [])];
+      data.plans?.forEach(plan => {
+        if (plan.photoUrl) {
+          photos.push(plan.photoUrl);
+        }
+      });
+      setAllPhotos(photos);
     } catch (error) {
       Alert.alert("Error", "Failed to load event details");
     }
@@ -144,8 +159,33 @@ export default function EventDetail() {
   }
 
   const vibeScore = event.vibeMatchScoreEvent ?? 0;
+  const selectedPlan = event.plans?.find(p => p.isSelected) || event.plans?.[0];
+  const gallery = event.gallery || [];
 
-  // Igual ao web: "Thu, Aug 21 8:15 PM - 9:45 PM"
+  const handleExternalLink = async () => {
+    if (selectedPlan?.externalBookingUrl) {
+      await Linking.openURL(selectedPlan.externalBookingUrl);
+    }
+  };
+
+  const openPhotoModal = (photoUrl: string) => {
+    const photoIndex = allPhotos.findIndex(url => url === photoUrl);
+    setSelectedPhotoIndex(photoIndex >= 0 ? photoIndex : 0);
+    setShowPhotoModal(true);
+  };
+
+  const renderGalleryItem = ({ item }: { item: string }) => (
+    <TouchableOpacity 
+      className="w-32 h-32 rounded-xl overflow-hidden mr-3"
+      onPress={() => openPhotoModal(item)}
+    >
+      <Image
+        source={{ uri: item }}
+        className="w-full h-full"
+        resizeMode="cover"
+      />
+    </TouchableOpacity>
+  );
   const formatEventTime = (start: string, end?: string) => {
     const s = new Date(start);
     const e = end ? new Date(end) : undefined;
@@ -313,28 +353,44 @@ export default function EventDetail() {
             </View>
 
             <Text className="text-white/80 text-sm leading-relaxed mb-4">
-              {event.aiVibeAnalysis ??
-                `This ${
-                  event.venue?.toLowerCase() || "venue"
-                } attracts creative professionals and music lovers. High energy atmosphere with great networking opportunities.`}
+              {event.aiNormalized?.vibeAnalysis || 
+               event.description ||
+               `This ${
+                 event.regionName?.toLowerCase() || "venue"
+               } attracts creative professionals and music lovers. High energy atmosphere with great networking opportunities.`}
             </Text>
 
-            {!!event.tags?.length && (
+            {event.vibeKey && (
               <View className="flex-row flex-wrap gap-2">
-                {event.tags.map((tag, i) => (
-                  <View
-                    key={`${tag}-${i}`}
-                    className="px-2 py-1 rounded-lg bg-white/10"
-                  >
-                    <Text className="text-white/70 text-xs font-medium">
-                      #{tag}
-                    </Text>
-                  </View>
-                ))}
+                <View className="px-3 py-2 rounded-lg bg-[#cc5c24]/20 border border-[#cc5c24]/30">
+                  <Text className="text-[#cc5c24] text-xs font-bold">
+                    {event.vibeKey}
+                  </Text>
+                </View>
               </View>
             )}
           </View>
         </View>
+
+        {gallery.length > 0 && (
+          <View className="rounded-2xl overflow-hidden border border-white/20">
+            <BlurView intensity={15} tint="dark" className="absolute inset-0" />
+            <View className="absolute inset-0 bg-white/5" />
+            <View className="p-4">
+              <Text className="text-white font-bold text-base mb-3">
+                Gallery ({gallery.length} photos)
+              </Text>
+              <FlatList
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                data={gallery}
+                keyExtractor={(_, index) => `gallery-${index}`}
+                renderItem={renderGalleryItem}
+                contentContainerStyle={{ paddingRight: 16 }}
+              />
+            </View>
+          </View>
+        )}
 
         <View className="rounded-2xl overflow-hidden border border-white/20">
           <BlurView intensity={15} tint="dark" className="absolute inset-0" />
@@ -394,44 +450,83 @@ export default function EventDetail() {
               </Text>
 
               {plans.map((plan) => (
-                <TouchableOpacity
+                <View
                   key={plan.id}
-                  className="rounded-xl p-3 mb-2 border border-gray-700/50"
-                  style={{ backgroundColor: "rgba(31,31,31,0.6)" }}
+                  className={`rounded-xl p-3 mb-2 border ${
+                    plan.isSelected ? 'border-[#cc5c24]' : 'border-gray-700/50'
+                  }`}
+                  style={{ 
+                    backgroundColor: plan.isSelected 
+                      ? "rgba(204,92,36,0.2)" 
+                      : "rgba(31,31,31,0.6)" 
+                  }}
                 >
                   <View className="flex-row items-start">
                     <View
                       className="w-8 h-8 rounded-lg items-center justify-center mr-3"
-                      style={{ backgroundColor: "rgba(55,65,81,0.7)" }}
+                      style={{ 
+                        backgroundColor: plan.isSelected 
+                          ? "#cc5c24" 
+                          : "rgba(55,65,81,0.7)" 
+                      }}
                     >
                       <Text className="text-lg">{plan.emoji ?? "✨"}</Text>
                     </View>
                     <View className="flex-1">
                       <View className="flex-row items-center justify-between mb-1">
-                        <Text className="text-white text-sm font-medium">
-                          {plan.title}
+                        <Text className={`text-sm font-medium ${
+                          plan.isSelected ? 'text-[#cc5c24]' : 'text-white'
+                        }`}>
+                          {plan.title} {plan.isSelected && '✓'}
                         </Text>
                         <Text className="text-white/60 text-xs">
                           {plan.votes ?? 0} votes
                         </Text>
                       </View>
-                      <Text className="text-gray-300 text-xs leading-relaxed">
+                      <Text className="text-gray-300 text-xs leading-relaxed mb-2">
                         {plan.description}
                       </Text>
+                      {plan.venue && (
+                        <Text className="text-white/70 text-xs mb-2">
+                          📍 {plan.venue}
+                        </Text>
+                      )}
+                      {plan.photoUrl && (
+                        <TouchableOpacity 
+                          onPress={() => openPhotoModal(plan.photoUrl!)}
+                          className="w-full h-24 rounded-lg overflow-hidden mb-2"
+                        >
+                          <Image
+                            source={{ uri: plan.photoUrl }}
+                            className="w-full h-full"
+                            resizeMode="cover"
+                          />
+                        </TouchableOpacity>
+                      )}
+                      {plan.isSelected && plan.externalBookingUrl && (
+                        <TouchableOpacity
+                          onPress={handleExternalLink}
+                          className="flex-row items-center bg-[#cc5c24] px-3 py-2 rounded-lg mt-2"
+                        >
+                          <ExternalLink size={14} color="white" />
+                          <Text className="text-white text-xs font-medium ml-2">
+                            View on Maps
+                          </Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
                   </View>
-                </TouchableOpacity>
+                </View>
               ))}
             </View>
           </View>
         )}
 
-        {/* Local/Endereço (opcional — se quiser embaixo do Analysis, como chips) */}
-        {!!event.venue && (
+        {!!event.regionName && (
           <View className="flex-row items-center px-1">
             <MapPin size={16} color="rgba(255,255,255,0.85)" />
             <Text className="text-white/85 ml-2">
-              {event.venue} • {event.address}
+              {event.regionName} {event.address && `• ${event.address}`}
             </Text>
           </View>
         )}
@@ -587,6 +682,65 @@ export default function EventDetail() {
           </View>
         )}
       </LinearGradient>
+
+      <Modal
+        visible={showPhotoModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowPhotoModal(false)}
+      >
+        <View className="flex-1 bg-black">
+          <StatusBar hidden />
+          
+          <TouchableOpacity
+            onPress={() => setShowPhotoModal(false)}
+            className="absolute top-12 right-4 z-10 w-10 h-10 rounded-full items-center justify-center"
+            style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+          >
+            <Text className="text-white text-lg font-bold">×</Text>
+          </TouchableOpacity>
+
+          <FlatList
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            data={allPhotos}
+            keyExtractor={(_, index) => `photo-${index}`}
+            initialScrollIndex={selectedPhotoIndex}
+            getItemLayout={(_, index) => ({
+              length: screenWidth,
+              offset: screenWidth * index,
+              index,
+            })}
+            renderItem={({ item }) => (
+              <View style={{ width: screenWidth, height: screenHeight }}>
+                <View className="flex-1 justify-center items-center">
+                  <Image
+                    source={{ uri: item }}
+                    style={{ 
+                      width: screenWidth, 
+                      height: screenHeight,
+                      resizeMode: 'contain'
+                    }}
+                  />
+                </View>
+              </View>
+            )}
+            onMomentumScrollEnd={(event) => {
+              const index = Math.round(event.nativeEvent.contentOffset.x / screenWidth);
+              setSelectedPhotoIndex(index);
+            }}
+          />
+
+          <View className="absolute bottom-8 left-0 right-0 items-center">
+            <View className="bg-black/50 px-4 py-2 rounded-full">
+              <Text className="text-white text-sm">
+                {selectedPhotoIndex + 1} of {allPhotos.length}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

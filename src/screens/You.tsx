@@ -32,10 +32,8 @@ export default function You() {
   const [activeFilter, setActiveFilter] = useState<
     "all" | "thisweek" | "saved" | "liked"
   >("all");
-  const [sortBy, setSortBy] = useState<"date" | "activity">("date");
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [assets] = useAssets([require("../../assets/JoynOS_Logo.png")]);
   const [joinedEvents, setJoinedEvents] = useState<any[]>([]);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const flatListRef = useRef<FlatList>(null);
@@ -199,15 +197,10 @@ export default function You() {
       );
     }
 
-    if (sortBy === "activity") {
-      return events.sort((a: any, b: any) => {
-        const aActivity = a.lastMessageTime || a.startTime;
-        const bActivity = b.lastMessageTime || b.startTime;
-        return new Date(bActivity).getTime() - new Date(aActivity).getTime();
-      });
-    }
-
-    return events;
+    // Ordena por data de início por padrão
+    return events.sort((a: any, b: any) => {
+      return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
+    });
   };
 
   const filteredEvents = getFilteredEvents();

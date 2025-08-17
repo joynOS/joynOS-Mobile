@@ -86,6 +86,19 @@ export type EventPlan = {
   isSelected: boolean;
   createdAt: string;
   updatedAt: string;
+  placeProvider?: string;
+  placeId?: string;
+  venue?: string;
+  address?: string;
+  lat?: string;
+  lng?: string;
+  rating?: string;
+  priceLevel?: number | null;
+  photoUrl?: string;
+  externalBookingUrl?: string;
+  mapUrl?: string;
+  tags?: string[];
+  aiNotes?: string | null;
 };
 
 export type EventDetail = {
@@ -98,8 +111,8 @@ export type EventDetail = {
   externalBookingUrl: string | null;
   venue: string | null;
   address: string | null;
-  lat: number;
-  lng: number;
+  lat: number | string;
+  lng: number | string;
   startTime: string;
   endTime: string | null;
   rating: number | null;
@@ -117,6 +130,29 @@ export type EventDetail = {
   plans: EventPlan[];
   // AI-generated content
   aiVibeAnalysis?: string;
+  aiNormalized?: {
+    vibeKey: string;
+    vibeAnalysis: string;
+    mappedInterests: Array<{
+      id: string;
+      weight: number;
+    }>;
+  };
+  aiRaw?: any;
+  // Member status information
+  memberStatus?: "JOINED" | "COMMITTED" | "ATTENDED" | null;
+  bookingStatus?: "NONE" | "BOOKED" | null;
+  // Event status helper
+  status?: "Attending" | "Interested" | "Attended" | "Joined";
+  // Additional location/vibe data
+  etaSeconds?: number;
+  regionProvider?: string;
+  regionPlaceId?: string;
+  regionName?: string;
+  gallery?: string[];
+  vibeKey?: string;
+  searchRadiusM?: number;
+  embedding?: any;
   // Dynamic scoring and analytics
   vibeMatchScoreEvent: number;
   vibeMatchScoreWithOtherUsers: number;

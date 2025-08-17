@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -19,32 +19,93 @@ import EventCard from "../components/EventCard";
 import LoadingSpinner from "../components/LoadSpinner";
 import LiveIntentCapture from "../components/LiveIntentCapture";
 import Spinner from "../components/Spinner";
-import { Filter, Plus, Search, User } from "lucide-react-native";
+import { Plus, Search, User } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { eventsService } from "../services/events";
 import { RootStackParamList } from "../navigation/types";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-type YouScreenNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  "You"
->;
-
-type IntentData = {
-  id?: string;
-  description?: string;
-};
 
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
 const GRID_ITEM_WIDTH = (windowWidth - 24) / 2;
+
+// Helper function para mapear os dados da nova API
+const mapRecommendationToEvent = (it: any) => {
+  // Mapear o status baseado no memberStatus
+  const getEventStatus = (memberStatus: string | null, isMember: boolean) => {
+    if (!isMember || !memberStatus) return "Interested";
+    
+    switch (memberStatus) {
+      case "JOINED":
+        return "Attending";
+      case "COMMITTED":
+        return "Attending";
+      case "ATTENDED":
+        return "Attended";
+      default:
+        return "Interested";
+    }
+  };
+
+  return {
+    id: it.eventId,
+    title: it.title,
+    description: it.vibeAnalysis || null,
+    imageUrl: it.imageUrl,
+    source: null,
+    sourceId: null,
+    externalBookingUrl: null,
+    venue: it.regionName,
+    address: it.address,
+    lat: 0,
+    lng: 0,
+    startTime: it.startTime,
+    endTime: null,
+    rating: null,
+    priceLevel: null,
+    votingState: 'NOT_STARTED' as const,
+    votingEndsAt: null,
+    selectedPlanId: null,
+    isMember: it.isMember || false,
+    isCommitted: it.memberStatus === "COMMITTED",
+    tags: it.vibeKey ? [it.vibeKey] : [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    plans: [],
+    aiVibeAnalysis: it.vibeAnalysis,
+    aiNormalized: it.vibeKey ? {
+      vibeKey: it.vibeKey,
+      vibeAnalysis: it.vibeAnalysis || "",
+      mappedInterests: []
+    } : undefined,
+    vibeMatchScoreEvent: it.vibeMatchScoreEvent || 75,
+    vibeMatchScoreWithOtherUsers: it.vibeMatchScoreWithOtherUsers || 0,
+    distanceMiles: it.distanceMiles || 0,
+    interestedCount: it.interestedCount || 0,
+    participants: it.participants || [],
+    overlap: 0,
+    cosine: 0,
+    penalty: 0,
+    rate: 0,
+    etaSeconds: it.etaSeconds,
+    regionProvider: it.regionProvider,
+    regionPlaceId: it.regionPlaceId,
+    regionName: it.regionName,
+    gallery: it.gallery || [],
+    vibeKey: it.vibeKey,
+    searchRadiusM: it.searchRadiusM,
+    memberStatus: it.memberStatus,
+    bookingStatus: it.bookingStatus,
+    status: getEventStatus(it.memberStatus, it.isMember)
+  };
+};
 
 export default function Feed() {
   const navigation = useNavigation<any>();
 
   const [activeFilter, setActiveFilter] = useState("feed");
   const [showIntentCapture, setShowIntentCapture] = useState(false);
-  const [currentIntent, setCurrentIntent] = useState(null);
   const insets = useSafeAreaInsets();
 
   const [feedEvents, setFeedEvents] = useState<any[]>([]);
@@ -69,13 +130,9 @@ export default function Feed() {
           ? (browse as any).items
           : [];
         setDiscovery(list);
-        const detailCards = await Promise.all(
-          (rec.items || []).slice(0, 6).map(async (it) => {
-            const d = await eventsService.getById(it.eventId);
-            return d;
-          })
-        );
-        setFeedEvents(detailCards);
+        // Nova estrutura: usar diretamente os dados das recommendations
+        const feedItems = (rec.items || []).slice(0, 6).map(mapRecommendationToEvent);
+        setFeedEvents(feedItems);
       } finally {
         setIsLoading(false);
       }
@@ -156,7 +213,7 @@ export default function Feed() {
             onPress={() => setShowIntentCapture(!showIntentCapture)}
             style={[
               styles.iconButton,
-              currentIntent
+              showIntentCapture
                 ? { backgroundColor: "rgba(0, 196, 140, 0.125)" }
                 : null,
             ]}
@@ -225,13 +282,9 @@ export default function Feed() {
                 );
                 setCursor(rec.nextCursor);
                 setHasMoreRec(!!rec.nextCursor && (rec.items?.length ?? 0) > 0);
-                const detailCards = await Promise.all(
-                  rec.items
-                    .slice(0, 5)
-                    .map(async (it) => eventsService.getById(it.eventId))
-                );
-                if (detailCards.length > 0) {
-                  setFeedEvents((prev) => [...prev, ...detailCards]);
+                const moreItems = rec.items.slice(0, 5).map(mapRecommendationToEvent);
+                if (moreItems.length > 0) {
+                  setFeedEvents((prev) => [...prev, ...moreItems]);
                 }
               } finally {
                 setIsLoadingMore(false);
@@ -256,12 +309,8 @@ export default function Feed() {
                       ? (browse as any).items
                       : [];
                     setDiscovery(list);
-                    const detailCards = await Promise.all(
-                      (rec.items || [])
-                        .slice(0, 6)
-                        .map(async (it) => eventsService.getById(it.eventId))
-                    );
-                    setFeedEvents(detailCards);
+                    const refreshItems = (rec.items || []).slice(0, 6).map(mapRecommendationToEvent);
+                    setFeedEvents(refreshItems);
                   } finally {
                     setIsRefreshing(false);
                   }
