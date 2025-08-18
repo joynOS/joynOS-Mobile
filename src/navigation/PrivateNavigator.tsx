@@ -12,6 +12,7 @@ import EventLobby from '../screens/EventLobby';
 import DiscoveryScreen from '../screens/Discovery';
 
 import type { RootStackParamList } from './types';
+import EventReview from '../screens/EventReview';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -30,6 +31,7 @@ export const PrivateNavigator = () => {
       <Stack.Screen name="EventDetail" component={EventDetail} />
       <Stack.Screen name="EventChat" component={EventChat} />
       <Stack.Screen name="EventLobby" component={EventLobby} />
+      <Stack.Screen name="EventReview" component={EventReview} />
     </Stack.Navigator>
   );
 };

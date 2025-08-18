@@ -29,6 +29,7 @@ import { reviewService } from "../services/review";
 import type { EventDetail as EventDetailType, EventReview } from "../types/api";
 import { StyleSheet } from "react-native";
 import Button from "../components/Button";
+import ReviewModal from "../components/ReviewModal";
 
 type EventState = "PRE_JOIN" | "MEMBER";
 
@@ -47,7 +48,7 @@ export default function EventDetail() {
   const [existingReview, setExistingReview] = useState<EventReview | null>(
     null
   );
-  const [showReviewCTA, setShowReviewCTA] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
   const [showCommitButtons, setShowCommitButtons] = useState(false);
   const [commitStatus, setCommitStatus] = useState<
     "committed" | "not_committed" | null
@@ -90,14 +91,14 @@ export default function EventDetail() {
       try {
         const review = await reviewService.getEventReview(id);
         setExistingReview(review);
-        setShowReviewCTA(false);
+        setShowReviewModal(false);
       } catch (error: any) {
         if (error.response?.status === 404) {
-          setShowReviewCTA(true);
+          setShowReviewModal(true);
         }
       }
     } else {
-      setShowReviewCTA(false);
+      setShowReviewModal(false);
     }
   };
 
@@ -178,6 +179,13 @@ export default function EventDetail() {
     const photoIndex = allPhotos.findIndex((url) => url === photoUrl);
     setSelectedPhotoIndex(photoIndex >= 0 ? photoIndex : 0);
     setShowPhotoModal(true);
+  };
+
+  const handleReviewModalClose = (reviewSubmitted: boolean) => {
+    setShowReviewModal(false);
+    if (reviewSubmitted) {
+      loadEvent();
+    }
   };
 
   const renderGalleryItem = ({ item }: { item: string }) => (
@@ -566,36 +574,6 @@ export default function EventDetail() {
               </Text>
             </TouchableOpacity>
           </View>
-        ) : showReviewCTA ? (
-          <View className="flex-row items-center">
-            <View className="flex-1 mr-3">
-              <TouchableOpacity
-                onPress={() =>
-                  (navigation as any).navigate("EventReview", {
-                    eventId: id,
-                    eventTitle: event.title,
-                  })
-                }
-                className="py-[16px] rounded-lg items-center justify-center"
-                style={{ backgroundColor: "#cc5c24" }}
-              >
-                <Text
-                  style={{ color: "#fff", fontWeight: "600", fontSize: 16 }}
-                >
-                  Review Event
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              className="flex-1 py-[16px] rounded-lg border border-white/20 items-center justify-center bg-black/30"
-            >
-              <Text style={{ color: "#fff", fontWeight: "600", fontSize: 16 }}>
-                Close
-              </Text>
-            </TouchableOpacity>
-          </View>
         ) : existingReview ? (
           <View className="flex-row items-center">
             <View className="flex-1 mr-3 p-4 rounded-lg bg-green-500/20 border border-green-500/30">
@@ -732,6 +710,12 @@ export default function EventDetail() {
           </View>
         </View>
       </Modal>
+
+      <ReviewModal 
+        visible={showReviewModal && !existingReview}
+        event={event}
+        onClose={handleReviewModalClose}
+      />
     </View>
   );
 }
