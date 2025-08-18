@@ -29,7 +29,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { RootStackParamList } from "../navigation/types";
 import { eventsService } from "../services/events";
-import type { EventDetail as EventDetailType } from "../types/api";
+import { reviewService } from "../services/review";
+import type { EventDetail as EventDetailType, EventReview } from "../types/api";
 
 type EventState =
   | "PRE_JOIN"
@@ -56,8 +57,11 @@ export default function EventLobby() {
   const [isPlanExpanded, setIsPlanExpanded] = useState<boolean>(false);
   const [isBookingExpanded, setIsBookingExpanded] = useState<boolean>(false);
   const [isBookingMinimized, setIsBookingMinimized] = useState<boolean>(false);
+  const [hasReview, setHasReview] = useState<boolean>(false);
+  const [isEventEnded, setIsEventEnded] = useState<boolean>(false);
 
   const isVotingOpen = currentState === "VOTING_OPEN";
+  const isChatDisabled = isEventEnded && hasReview;
 
   useEffect(() => {
     loadEventData();
@@ -101,6 +105,20 @@ export default function EventLobby() {
       const data = await eventsService.getById(id);
       setEvent(data);
       setPlans(data.plans || []);
+
+      const now = new Date();
+      const eventEnded = data.endTime && new Date(data.endTime) < now;
+      setIsEventEnded(!!eventEnded);
+      if (eventEnded && data.isMember) {
+        try {
+          await reviewService.getEventReview(id);
+          setHasReview(true);
+        } catch (error: any) {
+          if (error.response?.status === 404) {
+            setHasReview(false);
+          }
+        }
+      }
 
       const votedKey = `event:${id}:votedPlanId`;
       let nextSelected: string | null = data.selectedPlanId;
@@ -198,6 +216,13 @@ export default function EventLobby() {
 
   const handleSendMessage = async () => {
     if (!chatInput.trim()) return;
+    if (isChatDisabled) {
+      Alert.alert(
+        "Chat Unavailable",
+        "Event has ended"
+      );
+      return;
+    }
     try {
       await eventsService.chatSend(id, chatInput.trim());
       setChatInput("");
@@ -711,24 +736,26 @@ export default function EventLobby() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="bg-black border-t border-white/10"
       >
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          className="px-4 py-2"
-          contentContainerStyle={{ gap: 8 }}
-        >
-          {["I'm so excited! 🎉", "Count me in!", "Ready to dance! 💃"].map(
-            (quickReply) => (
-              <TouchableOpacity
-                key={quickReply}
-                onPress={() => setChatInput(quickReply)}
-                className="bg-white/10 px-3 py-2 rounded-full"
-              >
-                <Text className="text-white/90 text-sm">{quickReply}</Text>
-              </TouchableOpacity>
-            )
-          )}
-        </ScrollView>
+        {!isChatDisabled && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            className="px-4 py-2"
+            contentContainerStyle={{ gap: 8 }}
+          >
+            {["I'm so excited! 🎉", "Count me in!", "Ready to dance! 💃"].map(
+              (quickReply) => (
+                <TouchableOpacity
+                  key={quickReply}
+                  onPress={() => setChatInput(quickReply)}
+                  className="bg-white/10 px-3 py-2 rounded-full"
+                >
+                  <Text className="text-white/90 text-sm">{quickReply}</Text>
+                </TouchableOpacity>
+              )
+            )}
+          </ScrollView>
+        )}
 
         {/* Composer (glass) */}
         <View
@@ -738,12 +765,33 @@ export default function EventLobby() {
             paddingTop: 8,
           }}
         >
+          {isChatDisabled && (
+            <View
+              style={{
+                backgroundColor: "rgba(255, 193, 7, 0.1)",
+                borderWidth: 1,
+                borderColor: "rgba(255, 193, 7, 0.3)",
+                borderRadius: 12,
+                padding: 12,
+                marginBottom: 12,
+              }}
+            >
+              <Text
+                style={{ color: "#ffc107", fontSize: 14, textAlign: "center" }}
+              >
+                📝 Event has ended!
+              </Text>
+            </View>
+          )}
+
           <View
             style={{
               position: "relative",
               borderRadius: 24,
               borderWidth: 1,
-              borderColor: "rgba(255,255,255,0.2)",
+              borderColor: isChatDisabled
+                ? "rgba(255,255,255,0.1)"
+                : "rgba(255,255,255,0.2)",
               padding: 16,
               marginBottom: 12,
               shadowColor: "#000",
@@ -751,23 +799,30 @@ export default function EventLobby() {
               shadowRadius: 16,
               shadowOffset: { width: 0, height: 8 },
               elevation: 14,
+              opacity: isChatDisabled ? 0.5 : 1,
             }}
           >
             <View style={{ position: "relative", justifyContent: "center" }}>
               <TextInput
                 value={chatInput}
-                onChangeText={setChatInput}
-                placeholder="Share your thoughts..."
+                onChangeText={isChatDisabled ? undefined : setChatInput}
+                placeholder={
+                  isChatDisabled
+                    ? "Event has ended"
+                    : "Share your thoughts..."
+                }
                 placeholderTextColor="rgba(255,255,255,0.5)"
                 multiline
+                editable={!isChatDisabled}
                 style={{
                   width: "100%",
-                  color: "white",
+                  color: isChatDisabled ? "rgba(255,255,255,0.3)" : "white",
                   backgroundColor: "rgba(255,255,255,0.10)",
                   borderWidth: 1,
-                  borderColor: chatInput.trim()
-                    ? "hsla(20, 70%, 47%, 0.5)"
-                    : "rgba(255,255,255,0.20)",
+                  borderColor:
+                    !isChatDisabled && chatInput.trim()
+                      ? "hsla(20, 70%, 47%, 0.5)"
+                      : "rgba(255,255,255,0.20)",
                   borderRadius: 18,
                   paddingVertical: 14,
                   paddingLeft: 16,
@@ -778,7 +833,7 @@ export default function EventLobby() {
 
               <TouchableOpacity
                 onPress={handleSendMessage}
-                disabled={!chatInput.trim()}
+                disabled={!chatInput.trim() || isChatDisabled}
                 activeOpacity={0.9}
                 style={{
                   position: "absolute",
@@ -791,18 +846,21 @@ export default function EventLobby() {
                   alignItems: "center",
                   justifyContent: "center",
                   borderWidth: 1,
-                  backgroundColor: chatInput.trim()
-                    ? "hsla(20, 70%, 47%, 0.10)"
-                    : "transparent",
-                  borderColor: chatInput.trim()
-                    ? "hsla(20, 70%, 47%, 0.20)"
-                    : "transparent",
+                  backgroundColor:
+                    !isChatDisabled && chatInput.trim()
+                      ? "hsla(20, 70%, 47%, 0.10)"
+                      : "transparent",
+                  borderColor:
+                    !isChatDisabled && chatInput.trim()
+                      ? "hsla(20, 70%, 47%, 0.20)"
+                      : "transparent",
+                  opacity: isChatDisabled ? 0.3 : 1,
                 }}
               >
                 <Send
                   size={18}
                   color={
-                    chatInput.trim()
+                    !isChatDisabled && chatInput.trim()
                       ? "hsl(20, 70%, 47%)"
                       : "rgba(255,255,255,0.4)"
                   }
