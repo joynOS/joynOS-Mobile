@@ -587,7 +587,7 @@ export default function EventDetail() {
 
             <TouchableOpacity
               onPress={() => navigation.goBack()}
-              className="px-6 py-[16px] rounded-lg border border-white/20 items-center justify-center bg-black/30"
+              className="px-6 py-6 rounded-lg border border-white/20 items-center justify-center bg-black/30"
             >
               <Text style={{ color: "#fff", fontWeight: "600", fontSize: 16 }}>
                 Close
