@@ -15,6 +15,7 @@ import {
   Platform,
   ListRenderItemInfo,
   ActivityIndicator,
+  Dimensions,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
@@ -845,6 +846,10 @@ export default function Profile() {
 }
 
 const TILE_H = 110;
+const { width: screenWidth } = Dimensions.get('window');
+const CARD_MARGIN = 16; // padding horizontal da FlatList
+const CARD_GAP = 8; // gap entre cards
+const CARD_WIDTH = (screenWidth - (CARD_MARGIN * 2) - (CARD_GAP * 2)) / 3;
 
 const styles = StyleSheet.create({
   container: {
@@ -969,7 +974,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   cardTile: {
-    flex: 1,
+    width: CARD_WIDTH,
     height: TILE_H,
     borderRadius: 12,
     overflow: "hidden",

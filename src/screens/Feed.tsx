@@ -92,7 +92,14 @@ const mapRecommendationToEvent = (it: any) => {
     regionProvider: it.regionProvider,
     regionPlaceId: it.regionPlaceId,
     regionName: it.regionName,
-    gallery: it.gallery || [],
+    gallery: it.gallery && it.gallery.length > 0 ? it.gallery : 
+      it.imageUrl ? [
+        it.imageUrl,
+        `https://picsum.photos/800/1200?random=${it.eventId}1`,
+        `https://picsum.photos/800/1200?random=${it.eventId}2`,
+        `https://picsum.photos/800/1200?random=${it.eventId}3`,
+        `https://picsum.photos/800/1200?random=${it.eventId}4`,
+      ] : [],
     vibeKey: it.vibeKey,
     searchRadiusM: it.searchRadiusM,
     memberStatus: it.memberStatus,

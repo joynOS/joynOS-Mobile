@@ -7,6 +7,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Share,
+  Dimensions,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { useNavigation } from "@react-navigation/native";
@@ -17,6 +18,7 @@ import { eventsService } from "../services/events";
 import { Clock, MapPin } from "lucide-react-native";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import type { Event } from "../shared/shared";
+import ImageSlider from "./ImageSlider";
 
 interface EventCardProps {
   event: any | ApiEvent | Event;
@@ -91,11 +93,14 @@ export default function EventCard({
     return "#3b82f6";
   };
 
-  const imageUri =
-    (event as any).imageUrl ||
-    `https://source.unsplash.com/collection/190727/800x1200?sig=${
-      (event as any).id
-    }`;
+  const images = (event as any).gallery && (event as any).gallery.length > 0 
+    ? (event as any).gallery 
+    : (event as any).imageUrl ? [(event as any).imageUrl] : [];
+
+  const { height: screenHeight } = Dimensions.get('window');
+  const cardHeight = variant === 'full' ? screenHeight : 400;
+
+  const hasMultipleImages = images.length > 1;
 
   return (
     <View
@@ -104,15 +109,31 @@ export default function EventCard({
         variant === "full" && styles.cardContainerFull,
       ]}
     >
-      <ImageBackground
-        source={{ uri: imageUri }}
-        style={styles.imageBackground}
-        imageStyle={[styles.image, variant === "full" && styles.imageFull]}
-      >
-        {/* Gradient Overlay */}
+      {hasMultipleImages ? (
+        <View style={styles.sliderContainer}>
+          <ImageSlider 
+            images={images}
+            height={cardHeight}
+            autoPlay={true}
+            autoPlayInterval={4000}
+            showIndicators={true}
+            useMosaic={variant === "full"}
+            onImagePress={(index) => {
+              console.log('Image pressed:', index);
+            }}
+          />
+        </View>
+      ) : (
+        <ImageBackground
+          source={{ uri: images[0] }}
+          style={styles.imageBackground}
+          imageStyle={[styles.image, variant === "full" && styles.imageFull]}
+        />
+      )}
+      
+      <View style={styles.overlayContainer}>
         <View style={styles.gradientOverlay} />
 
-        {/* Content Overlay */}
         <View
           style={[
             styles.contentOverlay,
@@ -217,7 +238,7 @@ export default function EventCard({
                   <Text style={styles.actionButtonText}>Join Now</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  onPress={onTap}
+                  onPress={() => navigation.navigate("EventDetail", { id: String(event.id || (event as any).id) })}
                   style={[styles.actionButton, styles.actionButtonSecondary]}
                   activeOpacity={0.8}
                 >
@@ -233,7 +254,6 @@ export default function EventCard({
           </View>
         </View>
 
-        {/* Side Actions */}
         <View
           style={[
             styles.sideActions,
@@ -295,7 +315,7 @@ export default function EventCard({
             />
           </TouchableOpacity>
         </View>
-      </ImageBackground>
+      </View>
     </View>
   );
 }
@@ -311,6 +331,21 @@ const styles = StyleSheet.create({
   cardContainerFull: {
     height: "100%",
     borderRadius: 0,
+  },
+  sliderContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  overlayContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "flex-end",
   },
   imageBackground: {
     flex: 1,
