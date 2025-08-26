@@ -17,6 +17,7 @@ import {
   ActivityIndicator,
   Dimensions,
   TextInput,
+  KeyboardAvoidingView,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
@@ -31,8 +32,6 @@ import {
   LogOut,
   Settings,
   Bell,
-  Moon,
-  Sun,
   HelpCircle,
   Download,
   Trash2,
@@ -84,7 +83,6 @@ export default function Profile() {
   const { showImagePickerOptions } = useImagePicker();
 
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [profileVisibility, setProfileVisibility] = useState<
     "public" | "private"
@@ -188,11 +186,14 @@ export default function Profile() {
   };
 
   const handleEditProfile = () => {
-    setEditingProfile({
-      name: user.name,
-      bio: user.bio || "",
-    });
-    setShowEditProfileModal(true);
+    setShowProfileMenu(false);
+    setTimeout(() => {
+      setEditingProfile({
+        name: user.name,
+        bio: user.bio || "",
+      });
+      setShowEditProfileModal(true);
+    }, 300);
   };
 
   const handleSaveProfile = async () => {
@@ -623,21 +624,25 @@ export default function Profile() {
         animationType="slide"
         onRequestClose={() => setShowEditProfileModal(false)}
       >
-        <View style={{ flex: 1 }}>
-          <TouchableOpacity
-            style={styles.menuOverlay}
-            activeOpacity={1}
-            onPress={() => setShowEditProfileModal(false)}
-          >
-            <BlurView
-              style={StyleSheet.absoluteFill}
-              intensity={35}
-              tint="dark"
-            />
-          </TouchableOpacity>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }} 
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <View style={{ flex: 1 }}>
+            <TouchableOpacity
+              style={styles.menuOverlay}
+              activeOpacity={1}
+              onPress={() => setShowEditProfileModal(false)}
+            >
+              <BlurView
+                style={StyleSheet.absoluteFill}
+                intensity={35}
+                tint="dark"
+              />
+            </TouchableOpacity>
 
-          <View style={styles.editProfilePanel}>
-            <View style={[styles.rowBetween, { marginBottom: 24 }]}>
+            <View style={styles.editProfilePanel}>
+              <View style={[styles.rowBetween, { marginBottom: 24 }]}>
               <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 18 }}>
                 Edit Profile
               </Text>
@@ -688,8 +693,9 @@ export default function Profile() {
                 <Text style={styles.editButtonText}>Save</Text>
               </TouchableOpacity>
             </View>
+            </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       <Modal

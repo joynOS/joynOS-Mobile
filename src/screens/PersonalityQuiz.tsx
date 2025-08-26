@@ -53,7 +53,7 @@ export default function PersonalityQuiz() {
   };
 
   const handleNext = async () => {
-    if (!quiz) return;
+    if (!quiz || !quiz.questions) return;
     if (currentQuestion < quiz.questions.length - 1) {
       setCurrentQuestion((prev) => prev + 1);
     } else {
@@ -137,7 +137,7 @@ export default function PersonalityQuiz() {
             disabled={!selectedAnswer}
             type="gradient"
             title={
-              quiz && currentQuestion < quiz.questions.length - 1
+              quiz && quiz.questions && currentQuestion < quiz.questions.length - 1
                 ? "Continue"
                 : "Complete Quiz"
             }
