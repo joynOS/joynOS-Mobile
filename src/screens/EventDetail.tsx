@@ -260,7 +260,12 @@ export default function EventDetail() {
 
         {/* Gradiente escurecendo a imagem */}
         <LinearGradient
-          colors={["rgba(0,0,0,0)", "rgba(0,0,0,0.3)", "rgba(0,0,0,0.7)", "rgba(0,0,0,0.95)"]}
+          colors={[
+            "rgba(0,0,0,0)",
+            "rgba(0,0,0,0.3)",
+            "rgba(0,0,0,0.7)",
+            "rgba(0,0,0,0.95)",
+          ]}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
           style={StyleSheet.absoluteFillObject}
@@ -489,7 +494,7 @@ export default function EventDetail() {
                     <View className="flex-1">
                       <View className="flex-row items-center justify-between mb-1">
                         <Text
-                          className={`text-sm font-medium ${
+                          className={`text-sm font-medium flex-1 ${
                             plan.isSelected ? "text-[#cc5c24]" : "text-white"
                           }`}
                         >
@@ -711,7 +716,7 @@ export default function EventDetail() {
         </View>
       </Modal>
 
-      <ReviewModal 
+      <ReviewModal
         visible={showReviewModal && !existingReview}
         event={event}
         onClose={handleReviewModalClose}
