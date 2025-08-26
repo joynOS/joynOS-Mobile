@@ -16,6 +16,7 @@ import {
   ListRenderItemInfo,
   ActivityIndicator,
   Dimensions,
+  TextInput,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
@@ -41,6 +42,8 @@ import {
 
 import { useAuth } from "../contexts/AuthContext";
 import { profileService } from "../services/profile";
+import { userService } from "../services/users";
+import { useImagePicker } from "../components/ImagePicker";
 import type { RootStackParamList } from "../navigation/types";
 import type { 
   ProfileSummary, 
@@ -77,7 +80,8 @@ const MOCK_USER_FALLBACK = {
 
 export default function Profile() {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
-  const { user: authUser, logout } = useAuth();
+  const { user: authUser, logout, reloadMe } = useAuth();
+  const { showImagePickerOptions } = useImagePicker();
 
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -95,6 +99,11 @@ export default function Profile() {
   const [visitedPlaces, setVisitedPlaces] = useState<VisitedPlace[]>([]);
   const [circleConnections, setCircleConnections] = useState<CircleConnection[]>([]);
   const [preferences, setPreferences] = useState<ProfilePreferences | null>(null);
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false);
+  const [editingProfile, setEditingProfile] = useState({
+    name: "",
+    bio: "",
+  });
 
   useEffect(() => {
     loadProfileData();
@@ -156,6 +165,49 @@ export default function Profile() {
     organized: 3, 
     rating: 4.8, 
     circleSize: summary?.circleCount || 0 
+  };
+
+  const handleAvatarEdit = () => {
+    showImagePickerOptions({
+      onImageSelected: async (image) => {
+        if (image) {
+          try {
+            await userService.updateProfile({ avatar: image });
+            await reloadMe();
+            Alert.alert("Success", "Profile photo updated successfully!");
+          } catch (error) {
+            Alert.alert("Error", "Failed to update profile photo");
+            console.error("Avatar update error:", error);
+          }
+        }
+      },
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+  };
+
+  const handleEditProfile = () => {
+    setEditingProfile({
+      name: user.name,
+      bio: user.bio || "",
+    });
+    setShowEditProfileModal(true);
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      await userService.updateProfile({
+        name: editingProfile.name,
+        bio: editingProfile.bio,
+      });
+      await reloadMe();
+      setShowEditProfileModal(false);
+      Alert.alert("Success", "Profile updated successfully!");
+    } catch (error) {
+      Alert.alert("Error", "Failed to update profile");
+      console.error("Profile update error:", error);
+    }
   };
 
   const handleLogout = async () => {
@@ -317,7 +369,7 @@ export default function Profile() {
             <TouchableOpacity
               style={styles.avatarEdit}
               activeOpacity={0.9}
-              onPress={() => Alert.alert("Edit photo")}
+              onPress={handleAvatarEdit}
             >
               <Edit size={12} color="#fff" />
             </TouchableOpacity>
@@ -566,6 +618,81 @@ export default function Profile() {
       />
 
       <Modal
+        visible={showEditProfileModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowEditProfileModal(false)}
+      >
+        <View style={{ flex: 1 }}>
+          <TouchableOpacity
+            style={styles.menuOverlay}
+            activeOpacity={1}
+            onPress={() => setShowEditProfileModal(false)}
+          >
+            <BlurView
+              style={StyleSheet.absoluteFill}
+              intensity={35}
+              tint="dark"
+            />
+          </TouchableOpacity>
+
+          <View style={styles.editProfilePanel}>
+            <View style={[styles.rowBetween, { marginBottom: 24 }]}>
+              <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 18 }}>
+                Edit Profile
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowEditProfileModal(false)}
+                style={styles.iconRound}
+              >
+                <Text style={{ color: "#fff", fontSize: 18 }}>×</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={{ marginBottom: 20 }}>
+              <Text style={styles.editLabel}>Name</Text>
+              <TextInput
+                style={styles.editInput}
+                value={editingProfile.name}
+                onChangeText={(text) => setEditingProfile(prev => ({ ...prev, name: text }))}
+                placeholder="Enter your name"
+                placeholderTextColor="rgba(255,255,255,0.5)"
+              />
+            </View>
+
+            <View style={{ marginBottom: 32 }}>
+              <Text style={styles.editLabel}>Bio</Text>
+              <TextInput
+                style={[styles.editInput, styles.editTextArea]}
+                value={editingProfile.bio}
+                onChangeText={(text) => setEditingProfile(prev => ({ ...prev, bio: text }))}
+                placeholder="Tell us about yourself"
+                placeholderTextColor="rgba(255,255,255,0.5)"
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
+            </View>
+
+            <View style={styles.editButtonRow}>
+              <TouchableOpacity
+                style={[styles.editButton, styles.editButtonCancel]}
+                onPress={() => setShowEditProfileModal(false)}
+              >
+                <Text style={styles.editButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.editButton, styles.editButtonSave]}
+                onPress={handleSaveProfile}
+              >
+                <Text style={styles.editButtonText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
         visible={showProfileMenu}
         transparent
         animationType="slide"
@@ -605,7 +732,7 @@ export default function Profile() {
               <View style={{ gap: 8, marginBottom: 16 }}>
                 <TouchableOpacity
                   style={styles.menuItemRow}
-                  onPress={() => Alert.alert("Edit Profile")}
+                  onPress={handleEditProfile}
                 >
                   <View
                     style={[
@@ -1161,5 +1288,60 @@ const styles = StyleSheet.create({
     height: 18,
     borderRadius: 9,
     backgroundColor: "#fff",
+  },
+  editProfilePanel: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderTopWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+    padding: 24,
+  },
+  editLabel: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  editInput: {
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+    borderRadius: 12,
+    padding: 16,
+    color: "#fff",
+    fontSize: 16,
+  },
+  editTextArea: {
+    height: 100,
+    textAlignVertical: "top",
+  },
+  editButtonRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  editButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  editButtonCancel: {
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+  },
+  editButtonSave: {
+    backgroundColor: JOYN_GREEN,
+  },
+  editButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

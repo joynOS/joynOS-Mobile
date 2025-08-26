@@ -25,7 +25,6 @@ import { eventsService } from "../services/events";
 import { RootStackParamList } from "../navigation/types";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
 const GRID_ITEM_WIDTH = (windowWidth - 24) / 2;
@@ -35,7 +34,7 @@ const mapRecommendationToEvent = (it: any) => {
   // Mapear o status baseado no memberStatus
   const getEventStatus = (memberStatus: string | null, isMember: boolean) => {
     if (!isMember || !memberStatus) return "Interested";
-    
+
     switch (memberStatus) {
       case "JOINED":
         return "Attending";
@@ -64,7 +63,7 @@ const mapRecommendationToEvent = (it: any) => {
     endTime: null,
     rating: null,
     priceLevel: null,
-    votingState: 'NOT_STARTED' as const,
+    votingState: "NOT_STARTED" as const,
     votingEndsAt: null,
     selectedPlanId: null,
     isMember: it.isMember || false,
@@ -74,11 +73,13 @@ const mapRecommendationToEvent = (it: any) => {
     updatedAt: new Date().toISOString(),
     plans: [],
     aiVibeAnalysis: it.vibeAnalysis,
-    aiNormalized: it.vibeKey ? {
-      vibeKey: it.vibeKey,
-      vibeAnalysis: it.vibeAnalysis || "",
-      mappedInterests: []
-    } : undefined,
+    aiNormalized: it.vibeKey
+      ? {
+          vibeKey: it.vibeKey,
+          vibeAnalysis: it.vibeAnalysis || "",
+          mappedInterests: [],
+        }
+      : undefined,
     vibeMatchScoreEvent: it.vibeMatchScoreEvent || 75,
     vibeMatchScoreWithOtherUsers: it.vibeMatchScoreWithOtherUsers || 0,
     distanceMiles: it.distanceMiles || 0,
@@ -92,19 +93,23 @@ const mapRecommendationToEvent = (it: any) => {
     regionProvider: it.regionProvider,
     regionPlaceId: it.regionPlaceId,
     regionName: it.regionName,
-    gallery: it.gallery && it.gallery.length > 0 ? it.gallery : 
-      it.imageUrl ? [
-        it.imageUrl,
-        `https://picsum.photos/800/1200?random=${it.eventId}1`,
-        `https://picsum.photos/800/1200?random=${it.eventId}2`,
-        `https://picsum.photos/800/1200?random=${it.eventId}3`,
-        `https://picsum.photos/800/1200?random=${it.eventId}4`,
-      ] : [],
+    gallery:
+      it.gallery && it.gallery.length > 0
+        ? it.gallery
+        : it.imageUrl
+        ? [
+            it.imageUrl,
+            `https://picsum.photos/800/1200?random=${it.eventId}1`,
+            `https://picsum.photos/800/1200?random=${it.eventId}2`,
+            `https://picsum.photos/800/1200?random=${it.eventId}3`,
+            `https://picsum.photos/800/1200?random=${it.eventId}4`,
+          ]
+        : [],
     vibeKey: it.vibeKey,
     searchRadiusM: it.searchRadiusM,
     memberStatus: it.memberStatus,
     bookingStatus: it.bookingStatus,
-    status: getEventStatus(it.memberStatus, it.isMember)
+    status: getEventStatus(it.memberStatus, it.isMember),
   };
 };
 
@@ -138,7 +143,9 @@ export default function Feed() {
           : [];
         setDiscovery(list);
         // Nova estrutura: usar diretamente os dados das recommendations
-        const feedItems = (rec.items || []).slice(0, 6).map(mapRecommendationToEvent);
+        const feedItems = (rec.items || [])
+          .slice(0, 6)
+          .map(mapRecommendationToEvent);
         setFeedEvents(feedItems);
       } finally {
         setIsLoading(false);
@@ -245,6 +252,14 @@ export default function Feed() {
 
       {/* Content */}
       <View style={styles.content}>
+        {activeFilter === "feed" && feedEvents.length === 0 && (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyTitle}>No content found</Text>
+            <Text style={styles.emptySubtitle}>
+              Try refreshing or adjust your discovery radius and interests
+            </Text>
+          </View>
+        )}
         {activeFilter === "feed" ? (
           <FlatList
             data={feedEvents}
@@ -289,7 +304,9 @@ export default function Feed() {
                 );
                 setCursor(rec.nextCursor);
                 setHasMoreRec(!!rec.nextCursor && (rec.items?.length ?? 0) > 0);
-                const moreItems = rec.items.slice(0, 5).map(mapRecommendationToEvent);
+                const moreItems = rec.items
+                  .slice(0, 5)
+                  .map(mapRecommendationToEvent);
                 if (moreItems.length > 0) {
                   setFeedEvents((prev) => [...prev, ...moreItems]);
                 }
@@ -316,7 +333,9 @@ export default function Feed() {
                       ? (browse as any).items
                       : [];
                     setDiscovery(list);
-                    const refreshItems = (rec.items || []).slice(0, 6).map(mapRecommendationToEvent);
+                    const refreshItems = (rec.items || [])
+                      .slice(0, 6)
+                      .map(mapRecommendationToEvent);
                     setFeedEvents(refreshItems);
                   } finally {
                     setIsRefreshing(false);
@@ -330,15 +349,6 @@ export default function Feed() {
                   <ActivityIndicator color="#cc5c24" />
                 </View>
               ) : null
-            }
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <View style={styles.emptyCircle} />
-                <Text style={styles.emptyTitle}>No content found</Text>
-                <Text style={styles.emptySubtitle}>
-                  Try refreshing or adjust your discovery radius and interests
-                </Text>
-              </View>
             }
           />
         ) : (
@@ -393,8 +403,7 @@ export default function Feed() {
                         >
                           <Image
                             source={{
-                              uri:
-                                event.imageUrl || "",
+                              uri: event.imageUrl || "",
                             }}
                             style={styles.gridItemImage}
                             resizeMode="cover"

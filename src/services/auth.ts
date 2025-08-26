@@ -2,8 +2,27 @@ import { http, tokenStorage } from "./http";
 import type { AccessTokens, Me } from "../types/api";
 
 export const authService = {
-  async signup(payload: { email: string; password: string; name: string }) {
-    const { data } = await http.post<any>("/auth/signup", payload);
+  async signup(payload: { email: string; password: string; name: string; bio?: string; avatar?: any }) {
+    const formData = new FormData();
+    formData.append('email', payload.email);
+    formData.append('password', payload.password);
+    formData.append('name', payload.name);
+    if (payload.bio) {
+      formData.append('bio', payload.bio);
+    }
+    if (payload.avatar) {
+      formData.append('avatar', {
+        uri: payload.avatar.uri,
+        type: payload.avatar.type || 'image/jpeg',
+        name: payload.avatar.name || 'avatar.jpg',
+      } as any);
+    }
+
+    const { data } = await http.post<any>("/auth/signup", formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     const tokens = {
       accessToken: data.accessToken,
       refreshToken: data.refreshToken
