@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -62,6 +62,9 @@ export default function EventLobby() {
   const [isEventEnded, setIsEventEnded] = useState<boolean>(false);
   const [chatSuggestions, setChatSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  
+  const scrollViewRef = useRef<ScrollView>(null);
+  const hasScrolledToBottom = useRef(false);
 
   const isVotingOpen = currentState === "VOTING_OPEN";
   const isChatDisabled = isEventEnded && hasReview;
@@ -182,9 +185,14 @@ export default function EventLobby() {
       const chatData = await eventsService.chatList(id, { limit: 50 });
       setMessages(chatData.items || []);
 
-      // if ((chatData.items?.length || 0) <= 2) {
-        loadChatSuggestions();
-      // }
+      if (!hasScrolledToBottom.current) {
+        setTimeout(() => {
+          scrollViewRef.current?.scrollToEnd({ animated: true });
+          hasScrolledToBottom.current = true;
+        }, 100);
+      }
+
+      loadChatSuggestions();
     } catch (error) {
       setMessages([]);
       loadChatSuggestions();
@@ -258,6 +266,10 @@ export default function EventLobby() {
       setChatInput("");
       setShowSuggestions(false);
       loadChat();
+      // Scroll to bottom when sending a new message
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 200);
     } catch (error) {
       Alert.alert("Error", "Failed to send message");
     }
@@ -340,6 +352,7 @@ export default function EventLobby() {
       </View>
 
       <ScrollView
+        ref={scrollViewRef}
         className="flex-1 px-4"
         contentContainerStyle={{ paddingBottom: 0 }}
       >
@@ -799,8 +812,8 @@ export default function EventLobby() {
         className="bg-black border-t border-white/10"
       >
         {!isChatDisabled &&
-          messages.length <= 2 &&
-          chatSuggestions.length > 0 && (
+          chatSuggestions.length > 0 &&
+          !chatInput.trim() && (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
