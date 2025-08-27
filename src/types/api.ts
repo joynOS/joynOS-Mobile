@@ -159,6 +159,18 @@ export type EventDetail = {
   distanceMiles: number;
   interestedCount: number;
   participants: EventParticipant[];
+  whyThisMatch?: {
+    eventMatch: {
+      score: number;
+      reasons: string[];
+    };
+    participantMatches: Array<{
+      name: string;
+      score: number;
+      reasons: string[];
+    }>;
+    overallExplanation: string;
+  };
   overlap: number;
   cosine: number;
   penalty: number;

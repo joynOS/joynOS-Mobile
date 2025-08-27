@@ -20,6 +20,7 @@ import {
   MapPin,
   Users,
   ExternalLink,
+  HelpCircle,
 } from "lucide-react-native";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
@@ -56,6 +57,7 @@ export default function EventDetail() {
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
   const [allPhotos, setAllPhotos] = useState<string[]>([]);
+  const [showWhyMatchModal, setShowWhyMatchModal] = useState(false);
 
   useEffect(() => {
     loadEvent();
@@ -305,20 +307,38 @@ export default function EventDetail() {
                 </View>
               </View>
 
-              <LinearGradient
-                colors={["#cc5c24", "hsl(258, 100%, 67%)"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={{
-                  paddingHorizontal: 10,
-                  paddingVertical: 7,
-                  borderRadius: 8,
-                }}
-              >
-                <Text className="text-white text-[11px] font-bold">
-                  {vibeScore}%
-                </Text>
-              </LinearGradient>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <LinearGradient
+                  colors={["#cc5c24", "hsl(258, 100%, 67%)"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={{
+                    paddingHorizontal: 10,
+                    paddingVertical: 7,
+                    borderRadius: 8,
+                  }}
+                >
+                  <Text className="text-white text-[11px] font-bold">
+                    {vibeScore}%
+                  </Text>
+                </LinearGradient>
+                
+                <TouchableOpacity
+                  onPress={() => setShowWhyMatchModal(true)}
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 14,
+                    backgroundColor: 'rgba(255,255,255,0.1)',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderWidth: 1,
+                    borderColor: 'rgba(255,255,255,0.2)'
+                  }}
+                >
+                  <HelpCircle size={16} color="#fff" />
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
 
@@ -654,6 +674,124 @@ export default function EventDetail() {
           </View>
         )}
       </LinearGradient>
+
+      <Modal
+        visible={showWhyMatchModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowWhyMatchModal(false)}
+      >
+        <View style={{ flex: 1 }}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={() => setShowWhyMatchModal(false)}
+          >
+            <BlurView
+              style={StyleSheet.absoluteFill}
+              intensity={35}
+              tint="dark"
+            />
+          </TouchableOpacity>
+
+          <View style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(255,255,255,0.08)',
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+            borderTopWidth: 1,
+            borderColor: 'rgba(255,255,255,0.2)',
+            padding: 24,
+            maxHeight: '70%'
+          }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+              <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>
+                Why this match?
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowWhyMatchModal(false)}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 16,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: 'rgba(255,255,255,0.1)'
+                }}
+              >
+                <Text style={{ color: '#fff', fontSize: 18 }}>×</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {event?.whyThisMatch && (
+                <>
+                  <View style={{ marginBottom: 20 }}>
+                    <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600', marginBottom: 12 }}>
+                      Event Match ({event.whyThisMatch.eventMatch.score}%)
+                    </Text>
+                    {event.whyThisMatch.eventMatch.reasons.map((reason, index) => (
+                      <View key={index} style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8 }}>
+                        <Text style={{ color: '#cc5c24', fontSize: 16, marginRight: 8 }}>•</Text>
+                        <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 14, flex: 1 }}>
+                          {reason}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+
+                  {event.whyThisMatch.participantMatches && event.whyThisMatch.participantMatches.length > 0 && (
+                    <View style={{ marginBottom: 20 }}>
+                      <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600', marginBottom: 12 }}>
+                        People Matches
+                      </Text>
+                      {event.whyThisMatch.participantMatches.map((participant, index) => (
+                        <View key={index} style={{ 
+                          backgroundColor: 'rgba(255,255,255,0.05)',
+                          borderRadius: 12,
+                          padding: 16,
+                          marginBottom: 12,
+                          borderWidth: 1,
+                          borderColor: 'rgba(255,255,255,0.1)'
+                        }}>
+                          <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600', marginBottom: 8 }}>
+                            {participant.name} ({participant.score}% match)
+                          </Text>
+                          {participant.reasons.map((reason, reasonIndex) => (
+                            <View key={reasonIndex} style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 4 }}>
+                              <Text style={{ color: '#cc5c24', fontSize: 14, marginRight: 8 }}>•</Text>
+                              <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, flex: 1 }}>
+                                {reason}
+                              </Text>
+                            </View>
+                          ))}
+                        </View>
+                      ))}
+                    </View>
+                  )}
+
+                  {event.whyThisMatch.overallExplanation && (
+                    <View style={{
+                      backgroundColor: 'rgba(204, 92, 36, 0.1)',
+                      borderRadius: 12,
+                      padding: 16,
+                      borderWidth: 1,
+                      borderColor: 'rgba(204, 92, 36, 0.3)'
+                    }}>
+                      <Text style={{ color: '#fff', fontSize: 14, lineHeight: 20 }}>
+                        {event.whyThisMatch.overallExplanation}
+                      </Text>
+                    </View>
+                  )}
+                </>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
 
       <Modal
         visible={showPhotoModal}

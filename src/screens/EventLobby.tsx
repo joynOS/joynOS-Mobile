@@ -30,6 +30,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { RootStackParamList } from "../navigation/types";
 import { eventsService } from "../services/events";
 import { reviewService } from "../services/review";
+import { matchService } from "../services/match";
 import type { EventDetail as EventDetailType, EventReview } from "../types/api";
 
 type EventState =
@@ -59,9 +60,22 @@ export default function EventLobby() {
   const [isBookingMinimized, setIsBookingMinimized] = useState<boolean>(false);
   const [hasReview, setHasReview] = useState<boolean>(false);
   const [isEventEnded, setIsEventEnded] = useState<boolean>(false);
+  const [chatSuggestions, setChatSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const isVotingOpen = currentState === "VOTING_OPEN";
   const isChatDisabled = isEventEnded && hasReview;
+  
+  const isWithinCommitWindow = () => {
+    if (!event?.startTime) return false;
+    const now = new Date().getTime();
+    const eventStart = new Date(event.startTime).getTime();
+    const threeHoursInMs = 3 * 60 * 60 * 1000; // 3 hours in milliseconds
+    return (eventStart - now) <= threeHoursInMs && eventStart > now;
+  };
+  
+
+  const canShowCommitButton = currentState === "BOOKED" && !booking?.isCommitted && isWithinCommitWindow();
 
   useEffect(() => {
     loadEventData();
@@ -132,29 +146,30 @@ export default function EventLobby() {
 
       if (!data.isMember) {
         setCurrentState("PRE_JOIN");
-      } else if (data.votingState === "OPEN") {
-        setCurrentState("VOTING_OPEN");
+      } else {
         loadChat();
-      } else if (data.votingState === "CLOSED") {
-        loadChat();
-        try {
-          const bookingInfo = await eventsService.bookingInfo(id);
-          setBooking(bookingInfo);
-          if (!data.selectedPlanId && bookingInfo?.selectedPlan?.id) {
-            setSelectedPlanId(bookingInfo.selectedPlan.id);
-          }
-          if (bookingInfo?.isCommitted) {
-            setCurrentState("COMMITTED");
-          } else if (bookingInfo?.isBooked) {
-            setCurrentState("BOOKED");
-          } else {
+        if (data.votingState === "OPEN") {
+          setCurrentState("VOTING_OPEN");
+        } else if (data.votingState === "CLOSED") {
+          try {
+            const bookingInfo = await eventsService.bookingInfo(id);
+            setBooking(bookingInfo);
+            if (!data.selectedPlanId && bookingInfo?.selectedPlan?.id) {
+              setSelectedPlanId(bookingInfo.selectedPlan.id);
+            }
+            if (bookingInfo?.isCommitted) {
+              setCurrentState("COMMITTED");
+            } else if (bookingInfo?.isBooked) {
+              setCurrentState("BOOKED");
+            } else {
+              setCurrentState("VOTING_CLOSED");
+            }
+            try {
+              await AsyncStorage.removeItem(votedKey);
+            } catch {}
+          } catch {
             setCurrentState("VOTING_CLOSED");
           }
-          try {
-            await AsyncStorage.removeItem(votedKey);
-          } catch {}
-        } catch {
-          setCurrentState("VOTING_CLOSED");
         }
       }
     } catch (error) {
@@ -166,8 +181,26 @@ export default function EventLobby() {
     try {
       const chatData = await eventsService.chatList(id, { limit: 50 });
       setMessages(chatData.items || []);
+
+      // if ((chatData.items?.length || 0) <= 2) {
+        loadChatSuggestions();
+      // }
     } catch (error) {
       setMessages([]);
+      loadChatSuggestions();
+    }
+  };
+
+  const loadChatSuggestions = async () => {
+    try {
+      const response = await matchService.getChatSuggestions(id);
+      const suggestions = response.suggestions || [];
+      setChatSuggestions(suggestions);
+      setShowSuggestions(suggestions.length > 0);
+    } catch (error) {
+      console.error("Failed to load chat suggestions:", error);
+      setChatSuggestions([]);
+      setShowSuggestions(false);
     }
   };
 
@@ -217,19 +250,22 @@ export default function EventLobby() {
   const handleSendMessage = async () => {
     if (!chatInput.trim()) return;
     if (isChatDisabled) {
-      Alert.alert(
-        "Chat Unavailable",
-        "Event has ended"
-      );
+      Alert.alert("Chat Unavailable", "Event has ended");
       return;
     }
     try {
       await eventsService.chatSend(id, chatInput.trim());
       setChatInput("");
+      setShowSuggestions(false);
       loadChat();
     } catch (error) {
       Alert.alert("Error", "Failed to send message");
     }
+  };
+
+  const handleUseSuggestion = (suggestion: string) => {
+    setChatInput(suggestion);
+    setShowSuggestions(false);
   };
 
   if (!event) {
@@ -662,9 +698,35 @@ export default function EventLobby() {
         <View className="mb-4">
           {messages.length === 0 ? (
             <View className="bg-white/5 rounded-xl p-4">
-              <Text className="text-white/60 text-center py-4">
-                No messages yet
-              </Text>
+              {showSuggestions && chatSuggestions.length > 0 ? (
+                <View>
+                  <Text className="text-white/60 text-center text-sm mb-3">
+                    AI suggestions to break the ice:
+                  </Text>
+                  {chatSuggestions.map((suggestion, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      onPress={() => handleUseSuggestion(suggestion)}
+                      className="bg-white/10 rounded-lg p-3 mb-2"
+                      activeOpacity={0.8}
+                    >
+                      <Text className="text-white text-sm">{suggestion}</Text>
+                    </TouchableOpacity>
+                  ))}
+                  <TouchableOpacity
+                    onPress={() => setShowSuggestions(false)}
+                    className="mt-2"
+                  >
+                    <Text className="text-white/40 text-center text-xs">
+                      Hide suggestions
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <Text className="text-white/60 text-center py-4">
+                  No messages yet
+                </Text>
+              )}
             </View>
           ) : (
             messages.map((m, idx) => {
@@ -736,26 +798,26 @@ export default function EventLobby() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="bg-black border-t border-white/10"
       >
-        {!isChatDisabled && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            className="px-4 py-2"
-            contentContainerStyle={{ gap: 8 }}
-          >
-            {["I'm so excited! 🎉", "Count me in!", "Ready to dance! 💃"].map(
-              (quickReply) => (
+        {!isChatDisabled &&
+          messages.length <= 2 &&
+          chatSuggestions.length > 0 && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              className="px-4 py-2"
+              contentContainerStyle={{ gap: 8 }}
+            >
+              {chatSuggestions.slice(0, 3).map((suggestion, index) => (
                 <TouchableOpacity
-                  key={quickReply}
-                  onPress={() => setChatInput(quickReply)}
+                  key={index}
+                  onPress={() => setChatInput(suggestion)}
                   className="bg-white/10 px-3 py-2 rounded-full"
                 >
-                  <Text className="text-white/90 text-sm">{quickReply}</Text>
+                  <Text className="text-white/90 text-sm">{suggestion}</Text>
                 </TouchableOpacity>
-              )
-            )}
-          </ScrollView>
-        )}
+              ))}
+            </ScrollView>
+          )}
 
         {/* Composer (glass) */}
         <View
@@ -807,9 +869,7 @@ export default function EventLobby() {
                 value={chatInput}
                 onChangeText={isChatDisabled ? undefined : setChatInput}
                 placeholder={
-                  isChatDisabled
-                    ? "Event has ended"
-                    : "Share your thoughts..."
+                  isChatDisabled ? "Event has ended" : "Share your thoughts..."
                 }
                 placeholderTextColor="rgba(255,255,255,0.5)"
                 multiline
@@ -872,7 +932,7 @@ export default function EventLobby() {
       </KeyboardAvoidingView>
 
       {/* Commit actions when booked */}
-      {currentState === "BOOKED" && (
+      {canShowCommitButton && (
         <View
           className="absolute bottom-0 left-0 right-0 bg-black border-t border-white/10 p-4"
           style={{ paddingBottom: insets.bottom + 16 }}
