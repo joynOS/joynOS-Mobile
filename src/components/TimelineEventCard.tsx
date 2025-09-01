@@ -1,6 +1,7 @@
 import { BlurView } from "expo-blur";
 import React, { memo, useMemo } from "react";
 import { View, Text, Image, TouchableOpacity } from "react-native";
+import { Heart, Bookmark } from "lucide-react-native";
 
 type TimelineEvent = {
   id: string | number;
@@ -16,6 +17,8 @@ type TimelineEvent = {
   maxAttendees?: number;
   lastMessage?: string;
   unreadCount?: number;
+  isSaved?: boolean;
+  isLiked?: boolean;
 };
 
 type Props = {
@@ -158,6 +161,20 @@ const TimelineEventCard: React.FC<Props> = ({
               <Text className="text-white font-bold text-md">{vibe}%</Text>
             </View>
           </BlurView>
+
+          {/* Favorite and Like indicators */}
+          <View className="flex-row gap-1">
+            {event.isSaved && (
+              <View className="w-6 h-6 rounded-full bg-orange-500/80 items-center justify-center">
+                <Bookmark size={12} color="white" fill="white" />
+              </View>
+            )}
+            {event.isLiked && (
+              <View className="w-6 h-6 rounded-full bg-red-500/80 items-center justify-center">
+                <Heart size={12} color="white" fill="white" />
+              </View>
+            )}
+          </View>
         </View>
       </View>
 

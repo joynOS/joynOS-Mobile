@@ -69,6 +69,10 @@ export type RecommendationItem = {
   vibeMatchScoreEvent: number;
   vibeMatchScoreWithOtherUsers: number;
   interestedCount: number;
+  // Backend flag: whether current user has saved this event
+  isSaved?: boolean;
+  // Backend flag: whether current user has liked this event
+  isLiked?: boolean;
 };
 
 export type RecommendationsResponse = {
@@ -124,6 +128,10 @@ export type EventDetail = {
   isMember?: boolean;
   // Backend flag: whether current user has committed to attend
   isCommitted?: boolean;
+  // Backend flag: whether current user has saved this event
+  isSaved?: boolean;
+  // Backend flag: whether current user has liked this event
+  isLiked?: boolean;
   tags: string[];
   createdAt: string;
   updatedAt: string;
@@ -303,4 +311,14 @@ export type ReviewResponse = {
   ok: boolean;
   review: EventReview;
   circleAdded: number;
+};
+
+export type FavoriteResponse = {
+  saved: boolean;
+  message: string;
+};
+
+export type LikeResponse = {
+  liked: boolean;
+  message: string;
 };

@@ -110,6 +110,8 @@ const mapRecommendationToEvent = (it: any) => {
     memberStatus: it.memberStatus,
     bookingStatus: it.bookingStatus,
     status: getEventStatus(it.memberStatus, it.isMember),
+    isSaved: it.saved || false,
+    isLiked: it.liked || false,
   };
 };
 

@@ -38,8 +38,17 @@ export default function EventCard({
   const memberCount =
     (event as any).interestedCount || Math.floor(Math.random() * 20) + 5;
 
-  const [liked, setLiked] = useState(false);
-  const [favorited, setFavorited] = useState(false);
+  const [liked, setLiked] = useState(event.isLiked || false);
+  const [favorited, setFavorited] = useState(event.isSaved || false);
+  
+  console.log("🎯 EventCard - Event data:", {
+    id: event.id,
+    title: event.title,
+    isLiked: event.isLiked,
+    isSaved: event.isSaved,
+    liked: liked,
+    favorited: favorited
+  });
 
   const handleJoinEvent = async () => {
     try {
@@ -48,6 +57,48 @@ export default function EventCard({
       navigation.navigate("EventLobby", { id: eventId });
     } catch (error) {
       console.error("Failed to join event:", error);
+    }
+  };
+
+  const handleToggleLike = async () => {
+    console.log("🔥 handleToggleLike called!");
+    const eventId = event.id || (event as any).id;
+    console.log("🔥 Event ID:", eventId);
+    const previousState = liked;
+    console.log("🔥 Previous state:", previousState);
+    
+    // Optimistic update - change immediately
+    setLiked(!liked);
+    console.log("🔥 Setting liked to:", !liked);
+    
+    try {
+      console.log("🔥 Calling API...");
+      const response = await eventsService.toggleLike(eventId);
+      console.log("🔥 API Response:", response);
+      // Confirm the state based on server response
+      setLiked(response.liked);
+      console.log("🔥 Final state set to:", response.liked);
+    } catch (error) {
+      console.error("❌ Failed to toggle like:", error);
+      // Revert to previous state on error
+      setLiked(previousState);
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    const previousState = favorited;
+    // Optimistic update - change immediately
+    setFavorited(!favorited);
+    
+    try {
+      const eventId = event.id || (event as any).id;
+      const response = await eventsService.toggleFavorite(eventId);
+      // Confirm the state based on server response
+      setFavorited(response.saved);
+    } catch (error) {
+      // Revert to previous state on error
+      setFavorited(previousState);
+      console.error("Failed to toggle favorite:", error);
     }
   };
 
@@ -262,7 +313,7 @@ export default function EventCard({
         >
           <TouchableOpacity
             activeOpacity={0.85}
-            onPress={() => setLiked((v) => !v)}
+            onPress={handleToggleLike}
             style={[styles.iconButton, liked && styles.iconButtonActive]}
           >
             <BlurView
@@ -300,7 +351,7 @@ export default function EventCard({
 
           <TouchableOpacity
             activeOpacity={0.85}
-            onPress={() => setFavorited((v) => !v)}
+            onPress={handleToggleFavorite}
             style={[styles.iconButton, favorited && styles.iconButtonActive]}
           >
             <BlurView

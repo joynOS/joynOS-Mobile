@@ -21,6 +21,7 @@ import {
   Users,
   ExternalLink,
   HelpCircle,
+  Heart,
 } from "lucide-react-native";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
@@ -58,6 +59,8 @@ export default function EventDetail() {
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
   const [allPhotos, setAllPhotos] = useState<string[]>([]);
   const [showWhyMatchModal, setShowWhyMatchModal] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
 
   useEffect(() => {
     loadEvent();
@@ -69,6 +72,8 @@ export default function EventDetail() {
       setEvent(data);
       setPlans(data.plans || []);
       setCurrentState(!data.isMember ? "PRE_JOIN" : "MEMBER");
+      setIsSaved(data.isSaved ?? false);
+      setIsLiked(data.isLiked ?? false);
 
       await checkReviewEligibility(data);
       checkCommitEligibility(data);
@@ -181,6 +186,38 @@ export default function EventDetail() {
     const photoIndex = allPhotos.findIndex((url) => url === photoUrl);
     setSelectedPhotoIndex(photoIndex >= 0 ? photoIndex : 0);
     setShowPhotoModal(true);
+  };
+
+  const handleToggleFavorite = async () => {
+    const previousState = isSaved;
+    // Optimistic update - change immediately
+    setIsSaved(!isSaved);
+    
+    try {
+      const response = await eventsService.toggleFavorite(id);
+      // Confirm the state based on server response
+      setIsSaved(response.saved);
+    } catch (error) {
+      // Revert to previous state on error
+      setIsSaved(previousState);
+      Alert.alert("Error", "Failed to update favorite status");
+    }
+  };
+
+  const handleToggleLike = async () => {
+    const previousState = isLiked;
+    // Optimistic update - change immediately
+    setIsLiked(!isLiked);
+    
+    try {
+      const response = await eventsService.toggleLike(id);
+      // Confirm the state based on server response
+      setIsLiked(response.liked);
+    } catch (error) {
+      // Revert to previous state on error
+      setIsLiked(previousState);
+      Alert.alert("Error", "Failed to update like status");
+    }
   };
 
   const handleReviewModalClose = (reviewSubmitted: boolean) => {
@@ -342,17 +379,45 @@ export default function EventDetail() {
             </View>
           </View>
 
-          <TouchableOpacity className="w-10 h-10 rounded-xl overflow-hidden">
-            <BlurView
-              intensity={30}
-              tint="dark"
-              className="absolute inset-0 rounded-xl"
-            />
-            <View className="absolute inset-0 bg-white/10 rounded-xl" />
-            <View className="flex-1 items-center justify-center">
-              <Bookmark size={20} color="white" />
-            </View>
-          </TouchableOpacity>
+          <View className="flex-row items-center" style={{ gap: 8 }}>
+            <TouchableOpacity 
+              onPress={handleToggleFavorite}
+              className="w-10 h-10 rounded-xl overflow-hidden"
+            >
+              <BlurView
+                intensity={30}
+                tint="dark"
+                className="absolute inset-0 rounded-xl"
+              />
+              <View className="absolute inset-0 bg-white/10 rounded-xl" />
+              <View className="flex-1 items-center justify-center">
+                <Bookmark 
+                  size={20} 
+                  color={isSaved ? "#ff6b35" : "white"} 
+                  fill={isSaved ? "#ff6b35" : "none"}
+                />
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              onPress={handleToggleLike}
+              className="w-10 h-10 rounded-xl overflow-hidden"
+            >
+              <BlurView
+                intensity={30}
+                tint="dark"
+                className="absolute inset-0 rounded-xl"
+              />
+              <View className="absolute inset-0 bg-white/10 rounded-xl" />
+              <View className="flex-1 items-center justify-center">
+                <Heart 
+                  size={20} 
+                  color={isLiked ? "#ff4757" : "white"} 
+                  fill={isLiked ? "#ff4757" : "none"}
+                />
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 

@@ -177,10 +177,10 @@ export default function You() {
         });
         break;
       case "saved":
-        events = [];
+        events = joinedEvents.filter((event: any) => event.isSaved === true);
         break;
       case "liked":
-        events = [];
+        events = joinedEvents.filter((event: any) => event.isLiked === true);
         break;
       default:
         events = joinedEvents;

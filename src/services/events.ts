@@ -4,6 +4,8 @@ import type {
   EventDetail,
   BookingInfo,
   ChatList,
+  FavoriteResponse,
+  LikeResponse,
 } from "../types/api";
 
 export const eventsService = {
@@ -103,5 +105,13 @@ export const eventsService = {
       text: string;
       createdAt: string;
     };
+  },
+  async toggleFavorite(id: string) {
+    const { data } = await http.post<FavoriteResponse>(`/events/${id}/favorite`);
+    return data;
+  },
+  async toggleLike(id: string) {
+    const { data } = await http.post<LikeResponse>(`/events/${id}/like`);
+    return data;
   },
 };
