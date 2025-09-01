@@ -99,7 +99,7 @@ export default function InterestSelector() {
             {interestOptions.map((item) => (
               <InterestItem
                 key={item.id}
-                label={`${item.emoji} ${item.label}`}
+                label={`${item.emoji || ""} ${item.label}`}
                 selected={selectedInterests.includes(item.id)}
                 onPress={() => toggleInterest(item.id)}
               />
