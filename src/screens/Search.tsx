@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, ScrollView, Image, TouchableOpacity, Keyboard, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SearchIcon, XIcon, ClockIcon, MapPinIcon, PlusIcon } from 'lucide-react-native';
-import { useSearchEventsQuery } from '../shared/eventSlice';
+import { eventsService } from '../services/events';
 import { EVENT_CATEGORIES } from '../utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger, Tab } from '../components/Tabs';
 import { Badge } from '../components/Badge';
@@ -26,15 +26,20 @@ export default function Search() {
     const [searchStarted, setSearchStarted] = useState(false);
     const [tab, setTab] = useState<'events' | 'categories' | 'filters'>('events');
 
-    // const { data: searchResults, isLoading } = useSearchEventsQuery(
-    //     { query: searchQuery },
-    //     { skip: !searchQuery.trim() }
-    // );
-
-    const { data: searchResults = [], isLoading } = useSearchEventsQuery(
-        { query: searchQuery },
-        { skip: !searchQuery.trim() }
-    );
+    const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    React.useEffect(() => {
+        (async () => {
+            if (!searchQuery.trim()) { setSearchResults([]); return; }
+            setIsLoading(true);
+            try {
+                const rec = await eventsService.recommendations();
+                setSearchResults(rec.items);
+            } finally {
+                setIsLoading(false);
+            }
+        })();
+    }, [searchQuery]);
 
     const handleSearch = (query: string) => {
         setSearchQuery(query);

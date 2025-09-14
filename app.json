@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "JoynOS-Mobile",
-    "slug": "JoynOS-Mobile",
+    "slug": "joynos",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -24,16 +24,24 @@
       "package": "com.egoeimi.joynos"
     },
     "web": {
+      "bundler": "metro",
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you share them with your friends."
+        }
+      ]
     ],
     "extra": {
       "eas": {
-        "projectId": "d6d97339-42d2-479a-b1f8-4b907a205e83"
+        "projectId": "dec12008-fa5b-4841-b505-ddeb9339acaf"
       }
     },
-    "scheme": "joynosmobile"
+    "scheme": "joynosmobile",
+    "owner": "jeovabah"
   }
 }
