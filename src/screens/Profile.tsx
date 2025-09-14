@@ -755,30 +755,10 @@ export default function Profile() {
                     </Text>
                   </View>
                 </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.menuItemRow}
-                  onPress={() => Alert.alert("Settings")}
-                >
-                  <View
-                    style={[
-                      styles.menuIconCircle,
-                      { backgroundColor: `${JOYN_PURPLE}33` },
-                    ]}
-                  >
-                    <Settings size={16} color={JOYN_PURPLE} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.menuItemTitle}>Settings</Text>
-                    <Text style={styles.menuItemSubtitle}>
-                      Preferences and account
-                    </Text>
-                  </View>
-                </TouchableOpacity>
               </View>
 
-              <Text style={styles.menuSectionTitle}>Privacy & Security</Text>
-              <View style={{ gap: 8, marginBottom: 16 }}>
+              {/* <Text style={styles.menuSectionTitle}>Privacy & Security</Text> */}
+              {/* <View style={{ gap: 8, marginBottom: 16 }}>
                 <TouchableOpacity
                   style={[styles.menuItemRow, styles.rowBetween]}
                   onPress={() =>
@@ -868,9 +848,9 @@ export default function Profile() {
                     }}
                   />
                 </View>
-              </View>
+              </View> */}
 
-              <Text style={styles.menuSectionTitle}>Support & Data</Text>
+              {/* <Text style={styles.menuSectionTitle}>Support & Data</Text>
               <View style={{ gap: 8, marginBottom: 16 }}>
                 <TouchableOpacity
                   style={styles.menuItemRow}
@@ -911,13 +891,13 @@ export default function Profile() {
                     </Text>
                   </View>
                 </TouchableOpacity>
-              </View>
+              </View> */}
 
               <Text style={[styles.menuSectionTitle, { color: "#f87171" }]}>
                 Danger Zone
               </Text>
               <View style={{ gap: 8, marginBottom: 24 }}>
-                <TouchableOpacity
+                {/* <TouchableOpacity
                   style={[
                     styles.menuItemRow,
                     {
@@ -948,7 +928,7 @@ export default function Profile() {
                       Permanently delete your account
                     </Text>
                   </View>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
 
                 <TouchableOpacity
                   style={styles.menuItemRow}
