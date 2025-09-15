@@ -69,10 +69,12 @@ export type RecommendationItem = {
   vibeMatchScoreEvent: number;
   vibeMatchScoreWithOtherUsers: number;
   interestedCount: number;
-  // Backend flag: whether current user has saved this event
+  // Backend flag: whether current user has saved this event (DEPRECATED - use userActions)
   isSaved?: boolean;
-  // Backend flag: whether current user has liked this event
+  // Backend flag: whether current user has liked this event (DEPRECATED - use userActions)
   isLiked?: boolean;
+  // New user actions array
+  userActions?: UserAction[];
 };
 
 export type RecommendationsResponse = {
@@ -128,10 +130,12 @@ export type EventDetail = {
   isMember?: boolean;
   // Backend flag: whether current user has committed to attend
   isCommitted?: boolean;
-  // Backend flag: whether current user has saved this event
+  // Backend flag: whether current user has saved this event (DEPRECATED - use userActions)
   isSaved?: boolean;
-  // Backend flag: whether current user has liked this event
+  // Backend flag: whether current user has liked this event (DEPRECATED - use userActions)
   isLiked?: boolean;
+  // New user actions array
+  userActions?: UserAction[];
   tags: string[];
   createdAt: string;
   updatedAt: string;
@@ -216,6 +220,11 @@ export type EventParticipant = {
   name: string;
   avatar: string | null;
   status: 'JOINED' | 'CANT_MAKE_IT' | 'COMMITTED';
+};
+
+export type UserAction = {
+  actionType: 'LIKED' | 'SAVED';
+  createdAt: string;
 };
 
 export type ProfileSummary = {

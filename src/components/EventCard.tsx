@@ -13,6 +13,7 @@ import { BlurView } from "expo-blur";
 import { useNavigation } from "@react-navigation/native";
 import type { NavigationProp } from "@react-navigation/native";
 import type { EventDetail as ApiEvent } from "../types/api";
+import { isEventLiked, isEventSaved } from "../utils/userActions";
 import type { RootStackParamList } from "../navigation/types";
 import { eventsService } from "../services/events";
 import { Clock, MapPin } from "lucide-react-native";
@@ -38,17 +39,9 @@ export default function EventCard({
   const memberCount =
     (event as any).interestedCount || Math.floor(Math.random() * 20) + 5;
 
-  const [liked, setLiked] = useState(event.isLiked || false);
-  const [favorited, setFavorited] = useState(event.isSaved || false);
+  const [liked, setLiked] = useState(isEventLiked(event));
+  const [favorited, setFavorited] = useState(isEventSaved(event));
   
-  console.log("🎯 EventCard - Event data:", {
-    id: event.id,
-    title: event.title,
-    isLiked: event.isLiked,
-    isSaved: event.isSaved,
-    liked: liked,
-    favorited: favorited
-  });
 
   const handleJoinEvent = async () => {
     try {
@@ -61,26 +54,16 @@ export default function EventCard({
   };
 
   const handleToggleLike = async () => {
-    console.log("🔥 handleToggleLike called!");
     const eventId = event.id || (event as any).id;
-    console.log("🔥 Event ID:", eventId);
     const previousState = liked;
-    console.log("🔥 Previous state:", previousState);
     
-    // Optimistic update - change immediately
     setLiked(!liked);
-    console.log("🔥 Setting liked to:", !liked);
     
     try {
-      console.log("🔥 Calling API...");
       const response = await eventsService.toggleLike(eventId);
-      console.log("🔥 API Response:", response);
-      // Confirm the state based on server response
       setLiked(response.liked);
-      console.log("🔥 Final state set to:", response.liked);
     } catch (error) {
       console.error("❌ Failed to toggle like:", error);
-      // Revert to previous state on error
       setLiked(previousState);
     }
   };

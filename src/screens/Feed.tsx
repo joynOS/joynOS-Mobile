@@ -112,6 +112,8 @@ const mapRecommendationToEvent = (it: any) => {
     status: getEventStatus(it.memberStatus, it.isMember),
     isSaved: it.saved || false,
     isLiked: it.liked || false,
+    // Map userActions from API if available
+    userActions: it.userActions || [],
   };
 };
 
