@@ -33,7 +33,7 @@ export default function VersionChecker({ children }: VersionCheckerProps) {
       const platform = Platform.OS === "ios" ? "ios" : "android";
 
       const response = await appService.checkVersion(currentVersion, platform);
-      console.log(response)
+
       setVersionInfo(response);
 
       if (response.forceUpdate) {
